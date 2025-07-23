@@ -11,7 +11,7 @@
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "typescript-eslint": "^8.29.1",
-    "vite": "^6.2.6",
+    "vite": "^7.0.5",
     "vite-plugin-ruby": "^5.1.1"
   },
   "dependencies": {
