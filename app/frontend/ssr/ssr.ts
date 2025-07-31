@@ -16,7 +16,7 @@ createServer((page) =>
   createInertiaApp({
     page,
     render: ReactDOMServer.renderToString,
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => title ? `${title} - ${appName}` : appName,
     resolve: (name) => {
       const pages = import.meta.glob<ResolvedComponent>("../pages/**/*.tsx", {
         eager: true,
