@@ -16,7 +16,7 @@ void createInertiaApp({
   // Set default page title
   // see https://inertia-rails.dev/guide/title-and-meta
   //
-  title: (title) => title ? `${title} - ${appName}` : appName,
+  title: (title) => (title ? `${title} - ${appName}` : appName),
 
   resolve: (name) => {
     const pages = import.meta.glob<ResolvedComponent>("../pages/**/*.tsx", {
