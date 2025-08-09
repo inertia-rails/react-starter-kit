@@ -13,7 +13,6 @@ import { newIdentityPasswordResetPath, signInPath, signUpPath } from "@/routes"
 interface LoginForm {
   email: string
   password: string
-  remember: boolean
 }
 
 export default function Login() {
@@ -22,7 +21,6 @@ export default function Login() {
   >({
     email: "",
     password: "",
-    remember: false,
   })
 
   const submit: FormEventHandler = (e) => {
