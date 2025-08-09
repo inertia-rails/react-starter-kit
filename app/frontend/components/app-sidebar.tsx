@@ -29,7 +29,7 @@ const mainNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
   {
     title: "Repository",
-    href: "https://github.com/skryukov/inertia-rails-shadcn-starter",
+    href: "https://github.com/inertia-rails/react-starter-kit",
     icon: Folder,
   },
   {
