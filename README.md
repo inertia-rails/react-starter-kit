@@ -11,7 +11,7 @@ A modern full-stack starter application with Rails backend and React frontend us
 - Optional SSR support
 
 
-<a href="https://evilmartians.com/?utm_source=inertia-rails-shadcn-starter&utm_campaign=project_page">
+<a href="https://evilmartians.com/?utm_source=inertia-rails-react-starter-kit&utm_campaign=project_page">
 <img src="https://evilmartians.com/badges/sponsored-by-evil-martians.svg" alt="Built by Evil Martians" width="236" height="54">
 </a>
 

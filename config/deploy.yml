@@ -1,8 +1,8 @@
 # Name of your application. Used to uniquely configure containers.
-service: inertia_rails_shadcn_starter
+service: react_starter_kit
 
 # Name of the container image.
-image: your-user/inertia_rails_shadcn_starter
+image: your-user/react_starter_kit
 
 # Deploy to these servers.
 servers:
@@ -60,7 +60,7 @@ env:
     # WEB_CONCURRENCY: 2
 
     # Match this to any external database server to configure Active Record correctly
-    # Use inertia_rails_shadcn_starter-db for a db accessory server on same machine via local kamal docker network.
+    # Use react_starter_kit-db for a db accessory server on same machine via local kamal docker network.
     # DB_HOST: 192.168.0.2
 
     # Log everything from Rails
@@ -78,7 +78,7 @@ aliases:
 # Use a persistent storage volume for sqlite database files and local Active Storage files.
 # Recommended to change this to a mounted volume path that is backed up off server.
 volumes:
-  - "inertia_rails_shadcn_starter_storage:/rails/storage"
+  - "react_starter_kit_storage:/rails/storage"
 
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
@@ -93,7 +93,7 @@ builder:
   # dockerfile: Dockerfile-ssr
   cache:
     type: registry
-    image: your-user/inertia_rails_shadcn_starter-build-cache
+    image: your-user/react_starter_kit-build-cache
     options: mode=max
 
   # # Build image via remote server (useful for faster amd64 builds on arm64 computers)

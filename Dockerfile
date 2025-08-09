@@ -2,8 +2,8 @@
 # check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t inertia_rails_shadcn_starter .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name inertia_rails_shadcn_starter inertia_rails_shadcn_starter
+# docker build -t react_starter_kit .
+# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name react_starter_kit react_starter_kit
 
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
