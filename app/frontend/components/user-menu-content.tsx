@@ -30,6 +30,24 @@ export function UserMenuContent({ auth }: UserMenuContentProps) {
     router.flushAll()
   }
 
+  // Handle guest users
+  if (!user || !session) {
+    return (
+      <>
+        <DropdownMenuLabel className="p-0 font-normal">
+          <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+            <UserInfo user={user || { id: 0, name: "Guest User", email: "guest@example.com", avatar: null, verified: false, created_at: "", updated_at: "" }} showEmail={true} />
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled>
+          <Settings className="mr-2" />
+          Sign in to access settings
+        </DropdownMenuItem>
+      </>
+    )
+  }
+
   return (
     <>
       <DropdownMenuLabel className="p-0 font-normal">

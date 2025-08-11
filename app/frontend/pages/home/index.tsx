@@ -31,6 +31,12 @@ export default function Welcome() {
             ) : (
               <>
                 <Link
+                  href={dashboardPath()}
+                  className="inline-block rounded-sm border border-[#f53003] bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-1.5 text-sm font-medium leading-normal text-white hover:from-purple-600 hover:to-pink-600"
+                >
+                  View Demo Dashboard
+                </Link>
+                <Link
                   href={signInPath()}
                   className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                 >

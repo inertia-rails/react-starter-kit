@@ -22,6 +22,17 @@ export function NavUser() {
   const { state } = useSidebar()
   const isMobile = useIsMobile()
 
+  // Create a default guest user when not authenticated
+  const user = auth.user || {
+    id: 0,
+    name: "Guest User",
+    email: "guest@example.com",
+    avatar: null,
+    verified: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -31,7 +42,7 @@ export function NavUser() {
               size="lg"
               className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group"
             >
-              <UserInfo user={auth.user} />
+              <UserInfo user={user} />
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -42,7 +53,7 @@ export function NavUser() {
               isMobile ? "bottom" : state === "collapsed" ? "left" : "bottom"
             }
           >
-            <UserMenuContent auth={auth} />
+            <UserMenuContent auth={{ ...auth, user }} />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
