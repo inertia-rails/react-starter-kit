@@ -1,6 +1,6 @@
 import { Transition } from "@headlessui/react"
-import { Head, useForm } from "@inertiajs/react"
-import { type FormEventHandler, useRef } from "react"
+import { Form, Head } from "@inertiajs/react"
+import { useRef } from "react"
 
 import HeadingSmall from "@/components/heading-small"
 import InputError from "@/components/input-error"
@@ -19,42 +19,9 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ]
 
-interface PasswordForm {
-  password_challenge: string
-  password: string
-  password_confirmation: string
-}
-
 export default function Password() {
   const passwordInput = useRef<HTMLInputElement>(null)
   const currentPasswordInput = useRef<HTMLInputElement>(null)
-
-  const { data, setData, errors, put, reset, processing, recentlySuccessful } =
-    useForm<Required<PasswordForm>>({
-      password_challenge: "",
-      password: "",
-      password_confirmation: "",
-    })
-
-  const updatePassword: FormEventHandler = (e) => {
-    e.preventDefault()
-
-    put(settingsPasswordPath(), {
-      preserveScroll: true,
-      onSuccess: () => reset(),
-      onError: (errors) => {
-        if (errors.password) {
-          reset("password", "password_confirmation")
-          passwordInput.current?.focus()
-        }
-
-        if (errors.password_challenge) {
-          reset("password_challenge")
-          currentPasswordInput.current?.focus()
-        }
-      },
-    })
-  }
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -67,73 +34,83 @@ export default function Password() {
             description="Ensure your account is using a long, random password to stay secure"
           />
 
-          <form onSubmit={updatePassword} className="space-y-6">
-            <div className="grid gap-2">
-              <Label htmlFor="password_challenge">Current password</Label>
+          <Form
+            method="put"
+            action={settingsPasswordPath()}
+            options={{
+              preserveScroll: true,
+            }}
+            resetOnError={["password", "password_challenge"]}
+            resetOnSuccess
+            className="space-y-6"
+          >
+            {({ errors, processing, recentlySuccessful }) => (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="password_challenge">Current password</Label>
 
-              <Input
-                id="password_challenge"
-                ref={currentPasswordInput}
-                value={data.password_challenge}
-                onChange={(e) => setData("password_challenge", e.target.value)}
-                type="password"
-                className="mt-1 block w-full"
-                autoComplete="current-password"
-                placeholder="Current password"
-              />
+                  <Input
+                    id="password_challenge"
+                    name="password_challenge"
+                    ref={currentPasswordInput}
+                    type="password"
+                    className="mt-1 block w-full"
+                    autoComplete="current-password"
+                    placeholder="Current password"
+                  />
 
-              <InputError message={errors.password_challenge} />
-            </div>
+                  <InputError message={errors.password_challenge} />
+                </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="password">New password</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">New password</Label>
 
-              <Input
-                id="password"
-                ref={passwordInput}
-                value={data.password}
-                onChange={(e) => setData("password", e.target.value)}
-                type="password"
-                className="mt-1 block w-full"
-                autoComplete="new-password"
-                placeholder="New password"
-              />
+                  <Input
+                    id="password"
+                    name="password"
+                    ref={passwordInput}
+                    type="password"
+                    className="mt-1 block w-full"
+                    autoComplete="new-password"
+                    placeholder="New password"
+                  />
 
-              <InputError message={errors.password} />
-            </div>
+                  <InputError message={errors.password} />
+                </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="password_confirmation">Confirm password</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="password_confirmation">
+                    Confirm password
+                  </Label>
 
-              <Input
-                id="password_confirmation"
-                value={data.password_confirmation}
-                onChange={(e) =>
-                  setData("password_confirmation", e.target.value)
-                }
-                type="password"
-                className="mt-1 block w-full"
-                autoComplete="new-password"
-                placeholder="Confirm password"
-              />
+                  <Input
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    type="password"
+                    className="mt-1 block w-full"
+                    autoComplete="new-password"
+                    placeholder="Confirm password"
+                  />
 
-              <InputError message={errors.password_confirmation} />
-            </div>
+                  <InputError message={errors.password_confirmation} />
+                </div>
 
-            <div className="flex items-center gap-4">
-              <Button disabled={processing}>Save password</Button>
+                <div className="flex items-center gap-4">
+                  <Button disabled={processing}>Save password</Button>
 
-              <Transition
-                show={recentlySuccessful}
-                enter="transition ease-in-out"
-                enterFrom="opacity-0"
-                leave="transition ease-in-out"
-                leaveTo="opacity-0"
-              >
-                <p className="text-sm text-neutral-600">Saved</p>
-              </Transition>
-            </div>
-          </form>
+                  <Transition
+                    show={recentlySuccessful}
+                    enter="transition ease-in-out"
+                    enterFrom="opacity-0"
+                    leave="transition ease-in-out"
+                    leaveTo="opacity-0"
+                  >
+                    <p className="text-sm text-neutral-600">Saved</p>
+                  </Transition>
+                </div>
+              </>
+            )}
+          </Form>
         </div>
       </SettingsLayout>
     </AppLayout>

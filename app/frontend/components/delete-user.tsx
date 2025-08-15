@@ -1,5 +1,5 @@
-import { useForm } from "@inertiajs/react"
-import { type FormEventHandler, useRef } from "react"
+import { Form } from "@inertiajs/react"
+import { useRef } from "react"
 
 import HeadingSmall from "@/components/heading-small"
 import InputError from "@/components/input-error"
@@ -17,37 +17,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { usersPath } from "@/routes"
 
-interface DeleteUserForm {
-  password_challenge: string
-}
-
 export default function DeleteUser() {
   const passwordInput = useRef<HTMLInputElement>(null)
-  const {
-    data,
-    setData,
-    delete: destroy,
-    processing,
-    reset,
-    errors,
-    clearErrors,
-  } = useForm<Required<DeleteUserForm>>({ password_challenge: "" })
-
-  const deleteUser: FormEventHandler = (e) => {
-    e.preventDefault()
-
-    destroy(usersPath(), {
-      preserveScroll: true,
-      onSuccess: () => closeModal(),
-      onError: () => passwordInput.current?.focus(),
-      onFinish: () => reset(),
-    })
-  }
-
-  const closeModal = () => {
-    clearErrors()
-    reset()
-  }
 
   return (
     <div className="space-y-6">
@@ -76,40 +47,52 @@ export default function DeleteUser() {
               also be permanently deleted. Please enter your password to confirm
               you would like to permanently delete your account.
             </DialogDescription>
-            <form className="space-y-6" onSubmit={deleteUser}>
-              <div className="grid gap-2">
-                <Label htmlFor="password_challenge" className="sr-only">
-                  Password
-                </Label>
+            <Form
+              method="delete"
+              action={usersPath()}
+              options={{
+                preserveScroll: true,
+              }}
+              onError={() => passwordInput.current?.focus()}
+              resetOnSuccess
+              className="space-y-6"
+            >
+              {({ resetAndClearErrors, processing, errors }) => (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password_challenge" className="sr-only">
+                      Password
+                    </Label>
 
-                <Input
-                  id="password_challenge"
-                  type="password"
-                  name="password_challenge"
-                  ref={passwordInput}
-                  value={data.password_challenge}
-                  onChange={(e) =>
-                    setData("password_challenge", e.target.value)
-                  }
-                  placeholder="Password"
-                  autoComplete="current-password"
-                />
+                    <Input
+                      id="password_challenge"
+                      type="password"
+                      name="password_challenge"
+                      ref={passwordInput}
+                      placeholder="Password"
+                      autoComplete="current-password"
+                    />
 
-                <InputError message={errors.password_challenge} />
-              </div>
+                    <InputError message={errors.password_challenge} />
+                  </div>
 
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="secondary" onClick={closeModal}>
-                    Cancel
-                  </Button>
-                </DialogClose>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button
+                        variant="secondary"
+                        onClick={() => resetAndClearErrors()}
+                      >
+                        Cancel
+                      </Button>
+                    </DialogClose>
 
-                <Button variant="destructive" disabled={processing} asChild>
-                  <button type="submit">Delete account</button>
-                </Button>
-              </DialogFooter>
-            </form>
+                    <Button variant="destructive" disabled={processing} asChild>
+                      <button type="submit">Delete account</button>
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+            </Form>
           </DialogContent>
         </Dialog>
       </div>

@@ -1,6 +1,5 @@
 import { Transition } from "@headlessui/react"
-import { Head, useForm, usePage } from "@inertiajs/react"
-import type { FormEventHandler } from "react"
+import { Form, Head, usePage } from "@inertiajs/react"
 
 import DeleteUser from "@/components/delete-user"
 import HeadingSmall from "@/components/heading-small"
@@ -20,25 +19,8 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ]
 
-interface ProfileForm {
-  name: string
-}
-
 export default function Profile() {
   const { auth } = usePage<SharedData>().props
-
-  const { data, setData, patch, errors, processing, recentlySuccessful } =
-    useForm<Required<ProfileForm>>({
-      name: auth.user.name,
-    })
-
-  const submit: FormEventHandler = (e) => {
-    e.preventDefault()
-
-    patch(settingsProfilePath(), {
-      preserveScroll: true,
-    })
-  }
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -51,37 +33,48 @@ export default function Profile() {
             description="Update your name"
           />
 
-          <form onSubmit={submit} className="space-y-6">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+          <Form
+            method="patch"
+            action={settingsProfilePath()}
+            options={{
+              preserveScroll: true,
+            }}
+            className="space-y-6"
+          >
+            {({ errors, processing, recentlySuccessful }) => (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
 
-              <Input
-                id="name"
-                className="mt-1 block w-full"
-                value={data.name}
-                onChange={(e) => setData("name", e.target.value)}
-                required
-                autoComplete="name"
-                placeholder="Full name"
-              />
+                  <Input
+                    id="name"
+                    name="name"
+                    className="mt-1 block w-full"
+                    defaultValue={auth.user.name}
+                    required
+                    autoComplete="name"
+                    placeholder="Full name"
+                  />
 
-              <InputError className="mt-2" message={errors.name} />
-            </div>
+                  <InputError className="mt-2" message={errors.name} />
+                </div>
 
-            <div className="flex items-center gap-4">
-              <Button disabled={processing}>Save</Button>
+                <div className="flex items-center gap-4">
+                  <Button disabled={processing}>Save</Button>
 
-              <Transition
-                show={recentlySuccessful}
-                enter="transition ease-in-out"
-                enterFrom="opacity-0"
-                leave="transition ease-in-out"
-                leaveTo="opacity-0"
-              >
-                <p className="text-sm text-neutral-600">Saved</p>
-              </Transition>
-            </div>
-          </form>
+                  <Transition
+                    show={recentlySuccessful}
+                    enter="transition ease-in-out"
+                    enterFrom="opacity-0"
+                    leave="transition ease-in-out"
+                    leaveTo="opacity-0"
+                  >
+                    <p className="text-sm text-neutral-600">Saved</p>
+                  </Transition>
+                </div>
+              </>
+            )}
+          </Form>
         </div>
 
         <DeleteUser />
