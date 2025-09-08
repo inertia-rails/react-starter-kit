@@ -77,5 +77,7 @@ end
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
+  # Synchronize Capybara commands with application JavaScript and AJAX requests
+  gem "capybara-lockstep"
   gem "selenium-webdriver"
 end
