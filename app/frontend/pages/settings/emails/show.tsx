@@ -1,6 +1,5 @@
 import { Transition } from "@headlessui/react"
 import { Form, Head, Link, usePage } from "@inertiajs/react"
-import { useRef } from "react"
 
 import HeadingSmall from "@/components/heading-small"
 import InputError from "@/components/input-error"
@@ -20,7 +19,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 export default function Email() {
-  const currentPasswordInput = useRef<HTMLInputElement>(null)
   const { auth } = usePage<SharedData>().props
 
   return (
@@ -85,7 +83,6 @@ export default function Email() {
                   <Input
                     id="password_challenge"
                     name="password_challenge"
-                    ref={currentPasswordInput}
                     type="password"
                     className="mt-1 block w-full"
                     autoComplete="current-password"

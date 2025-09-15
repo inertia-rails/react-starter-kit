@@ -1,6 +1,5 @@
 import { Transition } from "@headlessui/react"
 import { Form, Head } from "@inertiajs/react"
-import { useRef } from "react"
 
 import HeadingSmall from "@/components/heading-small"
 import InputError from "@/components/input-error"
@@ -20,9 +19,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 export default function Password() {
-  const passwordInput = useRef<HTMLInputElement>(null)
-  const currentPasswordInput = useRef<HTMLInputElement>(null)
-
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={breadcrumbs[breadcrumbs.length - 1].title} />
@@ -40,7 +36,7 @@ export default function Password() {
             options={{
               preserveScroll: true,
             }}
-            resetOnError={["password", "password_challenge"]}
+            resetOnError
             resetOnSuccess
             className="space-y-6"
           >
@@ -52,7 +48,6 @@ export default function Password() {
                   <Input
                     id="password_challenge"
                     name="password_challenge"
-                    ref={currentPasswordInput}
                     type="password"
                     className="mt-1 block w-full"
                     autoComplete="current-password"
@@ -68,7 +63,6 @@ export default function Password() {
                   <Input
                     id="password"
                     name="password"
-                    ref={passwordInput}
                     type="password"
                     className="mt-1 block w-full"
                     autoComplete="new-password"
