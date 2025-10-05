@@ -70,6 +70,7 @@ interface UseSearchOptions {
   autocompleteTriggerLength?: number
   autocompleteLimit?: number
   searchMode?: SearchMode
+  perPage?: number
 }
 
 interface UseSearchReturn {
@@ -80,18 +81,24 @@ interface UseSearchReturn {
   isLoading: boolean
   showSuggestions: boolean
   totalResults: number
+  currentPage: number
+  totalPages: number
+  perPage: number
   searchMode: SearchMode
   filters: SearchFilters
 
   // Actions
   setQuery: (query: string) => void
-  handleSearch: (searchQuery?: string) => Promise<void>
+  handleSearch: (searchQuery?: string, page?: number) => Promise<void>
   handleSuggestionClick: (cardName: string) => void
   setShowSuggestions: (show: boolean) => void
   clearSearch: () => void
   updateFilters: (newFilters: Partial<SearchFilters>) => void
   removeFilter: (filterKey: keyof SearchFilters) => void
   clearFilters: () => void
+  goToPage: (page: number) => void
+  nextPage: () => void
+  prevPage: () => void
 }
 
 export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
@@ -101,6 +108,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     autocompleteTriggerLength = 2,
     autocompleteLimit = 10,
     searchMode = "auto",
+    perPage = 20,
   } = options
 
   const [query, setQuery] = useState("")
@@ -109,6 +117,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [totalResults, setTotalResults] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
   const [filters, setFilters] = useState<SearchFilters>({})
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -385,8 +395,9 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
 
   // Search function
   const handleSearch = useCallback(
-    async (searchQuery?: string) => {
+    async (searchQuery?: string, page?: number) => {
       const finalQuery = searchQuery ?? query
+      const finalPage = page ?? currentPage
 
       // Check if we have either a query or active filters
       const hasFilters = Object.keys(filters).some((key) => {
@@ -400,6 +411,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
       if (!finalQuery.trim() && !hasFilters) {
         setSearchResults([])
         setTotalResults(0)
+        setCurrentPage(1)
+        setTotalPages(0)
         return
       }
 
@@ -412,20 +425,26 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
           params.append("q", finalQuery)
         }
         params.append("search_mode", searchMode)
+        params.append("page", finalPage.toString())
+        params.append("per_page", perPage.toString())
 
         const response = await fetch(`/api/cards/search?${params.toString()}`)
         const data = (await response.json()) as SearchResponse
         setSearchResults(data.results)
         setTotalResults(data.total)
+        setCurrentPage(data.page)
+        setTotalPages(data.total_pages)
       } catch (error: unknown) {
         console.error("Search error:", error)
         setSearchResults([])
         setTotalResults(0)
+        setCurrentPage(1)
+        setTotalPages(0)
       } finally {
         setIsLoading(false)
       }
     },
-    [query, searchMode, filters, buildFilterParams]
+    [query, currentPage, searchMode, filters, perPage, buildFilterParams]
   )
 
   // Handle suggestion click
@@ -444,12 +463,16 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     setSearchResults([])
     setSuggestions([])
     setTotalResults(0)
+    setCurrentPage(1)
+    setTotalPages(0)
     setShowSuggestions(false)
   }, [])
 
   // Update filters
   const updateFilters = useCallback((newFilters: Partial<SearchFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }))
+    // Reset to page 1 when filters change
+    setCurrentPage(1)
   }, [])
 
   // Remove a specific filter
@@ -459,12 +482,38 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
       delete updated[filterKey]
       return updated
     })
+    // Reset to page 1 when filters change
+    setCurrentPage(1)
   }, [])
 
   // Clear all filters
   const clearFilters = useCallback(() => {
     setFilters({})
+    // Reset to page 1 when filters are cleared
+    setCurrentPage(1)
   }, [])
+
+  // Pagination navigation
+  const goToPage = useCallback(
+    (page: number) => {
+      if (page >= 1 && page <= totalPages && page !== currentPage) {
+        void handleSearch(undefined, page)
+      }
+    },
+    [currentPage, totalPages, handleSearch]
+  )
+
+  const nextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      void handleSearch(undefined, currentPage + 1)
+    }
+  }, [currentPage, totalPages, handleSearch])
+
+  const prevPage = useCallback(() => {
+    if (currentPage > 1) {
+      void handleSearch(undefined, currentPage - 1)
+    }
+  }, [currentPage, handleSearch])
 
   return {
     // State
@@ -474,6 +523,9 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     isLoading,
     showSuggestions,
     totalResults,
+    currentPage,
+    totalPages,
+    perPage,
     searchMode,
     filters,
 
@@ -486,5 +538,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     updateFilters,
     removeFilter,
     clearFilters,
+    goToPage,
+    nextPage,
+    prevPage,
   }
 }

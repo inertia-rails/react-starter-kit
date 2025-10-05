@@ -6,6 +6,7 @@ import { FilterPills } from "@/components/filter-pills"
 import { SearchFiltersComponent } from "@/components/search-filters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Pagination } from "@/components/ui/pagination"
 import { useSearch } from "@/hooks/use-search"
 import AppLayout from "@/layouts/app-layout"
 import { transformSearchCardToCard } from "@/lib/types/card"
@@ -34,11 +35,14 @@ function SearchContent() {
     searchResults,
     isLoading,
     totalResults,
+    currentPage,
+    totalPages,
     handleSearch,
     filters,
     updateFilters,
     removeFilter,
     clearFilters,
+    goToPage,
   } = useSearch({ searchMode })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -115,7 +119,18 @@ function SearchContent() {
           )}
 
           {!isLoading && searchResults.length > 0 && (
-            <CardGrid cards={cards} />
+            <>
+              <CardGrid cards={cards} />
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {!isLoading &&
