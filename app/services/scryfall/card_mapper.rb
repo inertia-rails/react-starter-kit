@@ -102,6 +102,7 @@ module Scryfall
 
       printing.assign_attributes(
         scryfall_id: UuidValidator.validate_and_log(data["id"], record_type: "card_printing", record_id: data["id"], field: "scryfall_id"),
+        lang: data["lang"] || "en",
         rarity: data["rarity"],
         watermark: data["watermark"],
         printed_name: data["printed_name"],

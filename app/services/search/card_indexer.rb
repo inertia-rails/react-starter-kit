@@ -391,9 +391,12 @@ module Search
     end
 
     def card_document(card)
-      # Get first printing for image data, prioritizing non-foil variants
+      # Get first ENGLISH printing for image data, prioritizing non-foil variants
       # Manually filter to avoid scope issues with preloaded associations
-      printing = card.card_printings.find { |p| p.finishes&.include?("nonfoil") } || card.card_printings.first
+      english_printings = card.card_printings.select { |p| p.lang == "en" }
+      printing = english_printings.find { |p| p.finishes&.include?("nonfoil") } ||
+                 english_printings.first ||
+                 card.card_printings.first # Fallback to any printing if no English ones exist
 
       # For multi-faced cards without image_uris on printings, use card_faces
       image_uris = if card.card_faces.any? && card.card_faces.first.image_uris.present?

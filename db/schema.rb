@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_04_215529) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_05_201018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -95,11 +95,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_04_215529) do
     t.jsonb "purchase_uris", default: {}, comment: "Purchase links for this printing"
     t.jsonb "related_uris", default: {}, comment: "Related URIs for this printing"
     t.jsonb "artist_ids", default: [], comment: "Array of artist IDs"
+    t.string "lang", default: "en", null: false
     t.index ["artist"], name: "index_card_printings_on_artist"
     t.index ["card_back_id"], name: "index_card_printings_on_card_back_id"
     t.index ["card_id", "card_set_id", "collector_number"], name: "idx_printings_unique", unique: true
     t.index ["card_id"], name: "index_card_printings_on_card_id"
     t.index ["card_set_id"], name: "index_card_printings_on_card_set_id"
+    t.index ["lang"], name: "index_card_printings_on_lang"
     t.index ["prices"], name: "index_card_printings_on_prices", using: :gin
     t.index ["rarity"], name: "index_card_printings_on_rarity"
     t.index ["scryfall_id"], name: "index_card_printings_on_scryfall_id", unique: true
@@ -237,6 +239,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_04_215529) do
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_open_search_syncs_on_created_at"
     t.index ["status"], name: "index_open_search_syncs_on_status"
+  end
+
+  create_table "opensearch_migrations", force: :cascade do |t|
+    t.string "version", null: false
+    t.string "name", null: false
+    t.datetime "applied_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["version"], name: "index_opensearch_migrations_on_version", unique: true
   end
 
   create_table "related_cards", force: :cascade do |t|

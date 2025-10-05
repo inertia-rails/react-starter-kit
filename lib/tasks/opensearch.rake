@@ -250,4 +250,76 @@ namespace :opensearch do
       puts e.backtrace.first(3).join("\n")
     end
   end
+
+  namespace :migrate do
+    desc "Run pending OpenSearch migrations"
+    task run: :environment do
+      Search::MigrationRunner.run
+    end
+
+    desc "Show OpenSearch migration status"
+    task status: :environment do
+      puts "OpenSearch Migration Status"
+      puts "=" * 60
+
+      migrations = Search::MigrationRunner.status
+
+      if migrations.empty?
+        puts "No migrations found in db/opensearch_migrations/"
+        next
+      end
+
+      migrations.each do |migration|
+        status_icon = migration[:status] == "applied" ? "✓" : "○"
+        puts "#{status_icon} #{migration[:version]}_#{migration[:name]}"
+        if migration[:applied_at]
+          puts "   Applied: #{migration[:applied_at].strftime("%Y-%m-%d %H:%M:%S")}"
+        end
+      end
+
+      pending_count = migrations.count { |m| m[:status] == "pending" }
+      puts "\n#{pending_count} pending migration(s)" if pending_count > 0
+    end
+
+    desc "Generate a new OpenSearch migration"
+    task :generate, [:name] => :environment do |_t, args|
+      unless args[:name]
+        puts "Error: Migration name required"
+        puts "Usage: rake opensearch:migrate:generate[add_new_field]"
+        exit 1
+      end
+
+      timestamp = Time.current.strftime("%Y%m%d%H%M%S")
+      filename = "#{timestamp}_#{args[:name].underscore}.rb"
+      filepath = Rails.root.join("db", "opensearch_migrations", filename)
+
+      class_name = args[:name].underscore.camelize
+
+      File.write(filepath, <<~RUBY)
+        # frozen_string_literal: true
+
+        class #{class_name} < Search::Migration
+          def up
+            # TODO: Implement migration
+            # Examples:
+            #
+            # Add a field:
+            #   add_field(:my_field, { type: "keyword" })
+            #
+            # Update documents:
+            #   update_documents { "ctx._source.my_field = 'default_value'" }
+            #
+            # Full reindex:
+            #   reindex_if_needed
+          end
+
+          def down
+            # Optional: Implement rollback logic
+          end
+        end
+      RUBY
+
+      puts "Created migration: #{filepath}"
+    end
+  end
 end
