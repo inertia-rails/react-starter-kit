@@ -99,6 +99,55 @@ module Search
       {}
     end
 
+    def update_mapping
+      return false unless index_exists?
+
+      client.indices.put_mapping(
+        index: index_name,
+        body: {
+          properties: {
+            lang: {
+              type: "keyword"
+            }
+          }
+        }
+      )
+      Rails.logger.info("OpenSearch: Updated mapping for index '#{index_name}'")
+      true
+    rescue StandardError => e
+      Rails.logger.error("OpenSearch: Failed to update mapping: #{e.message}")
+      false
+    end
+
+    def update_all_documents_with_lang
+      return false unless index_exists?
+
+      # Use update_by_query to add lang field to all documents
+      # The field should already exist in _source from previous indexing
+      response = client.update_by_query(
+        index: index_name,
+        body: {
+          script: {
+            source: "ctx._source.lang = ctx._source.lang ?: 'en'",
+            lang: "painless"
+          },
+          query: {
+            match_all: {}
+          }
+        },
+        conflicts: "proceed",
+        wait_for_completion: true,
+        refresh: true
+      )
+
+      updated = response["updated"] || 0
+      Rails.logger.info("OpenSearch: Updated #{updated} documents with lang field")
+      true
+    rescue StandardError => e
+      Rails.logger.error("OpenSearch: Failed to update documents: #{e.message}")
+      false
+    end
+
     private
 
     def index_configuration
@@ -325,6 +374,10 @@ module Search
             finishes: {
               type: "keyword"
             },
+            # Language
+            lang: {
+              type: "keyword"
+            },
             # Metadata
             released_at: {
               type: "date"
@@ -383,6 +436,7 @@ module Search
         finishes: finishes,
         card_faces: card.card_faces.map { |face| card_face_document(face) },
         legalities: card_legalities_document(card),
+        lang: card.lang,
         released_at: card.released_at,
         updated_at: card.updated_at,
         # Platform availability

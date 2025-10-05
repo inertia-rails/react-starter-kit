@@ -556,6 +556,10 @@ module Search
     def build_filter_clauses(filters)
       filter_clauses = []
 
+      # Language filter - default to English unless specified
+      lang = filters[:lang] || "en"
+      filter_clauses << {term: {lang: lang}} if lang.present?
+
       # Color identity filter
       if filters[:colors].present?
         colors = Array(filters[:colors])

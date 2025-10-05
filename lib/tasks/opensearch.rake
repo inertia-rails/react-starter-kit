@@ -136,6 +136,44 @@ namespace :opensearch do
     end
   end
 
+  desc "Add lang field to existing index without full reindex"
+  task add_lang_field: :environment do
+    puts "Adding lang field to OpenSearch index..."
+    puts "=" * 50
+    indexer = Search::CardIndexer.new
+
+    # Step 1: Update mapping
+    puts "\n1. Updating index mapping to add 'lang' field..."
+    if indexer.update_mapping
+      puts "   ✓ Mapping updated successfully"
+    else
+      puts "   ✗ Failed to update mapping"
+      exit 1
+    end
+
+    # Step 2: Update all documents
+    puts "\n2. Updating all documents with lang field..."
+    if indexer.update_all_documents_with_lang
+      puts "   ✓ Documents updated successfully"
+    else
+      puts "   ✗ Failed to update documents"
+      exit 1
+    end
+
+    # Step 3: Verify
+    puts "\n3. Verifying changes..."
+    stats = indexer.index_stats
+    puts "   ✓ Index contains #{stats[:document_count]} documents"
+    puts "\n" + "=" * 50
+    puts "✓ Language field added successfully!"
+    puts "\nAll search results will now default to English cards."
+    puts "To search other languages, add a 'lang' parameter to filters."
+  rescue StandardError => e
+    puts "\n✗ Failed to add lang field: #{e.message}"
+    puts e.backtrace.first(5).join("\n")
+    exit 1
+  end
+
   desc "Backfill embeddings for all cards"
   task backfill_embeddings: :environment do
     start_id = ENV["START_ID"]
