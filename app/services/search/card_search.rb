@@ -539,7 +539,7 @@ module Search
             script: {
               source: """
                 double keywordScore = Math.max(_score, 0.1);
-                double vectorScore = cosineSimilarity(params.query_vector, doc['embedding']) + 1.0;
+                double vectorScore = doc['embedding'].size() == 0 ? 0.0 : cosineSimilarity(params.query_vector, doc['embedding']) + 1.0;
                 return (vectorScore * 3.0) + (keywordScore * 1.0);
               """,
               params: {
