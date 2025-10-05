@@ -309,7 +309,7 @@ module Search
               method: {
                 name: "hnsw",
                 space_type: "cosinesimil",
-                engine: "nmslib",
+                engine: "lucene",
                 parameters: {
                   ef_construction: 256, # Increased for better index quality (slower indexing, better recall)
                   m: 24 # Increased for better recall at query time (more memory, better results)
