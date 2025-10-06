@@ -7,3 +7,21 @@ production:
     class: "ClearSidekiqJobsJob"
     queue: default
     description: "Clear finished jobs from Sidekiq stats"
+
+  sync_default_cards:
+    cron: "15 * * * *"  # Every hour at minute 15
+    class: "ScryfallDefaultCardsSyncJob"
+    queue: default
+    description: "Sync default card printings from Scryfall (canonical images)"
+
+  sync_all_cards:
+    cron: "0 6 * * *"  # Daily at 06:00 UTC (midnight CST)
+    class: "ScryfallAllCardsSyncJob"
+    queue: default
+    description: "Sync all card printings from Scryfall (daily at midnight Central)"
+
+  generate_embeddings:
+    cron: "30 * * * *"  # Every hour at minute 30
+    class: "HourlyEmbeddingGenerationJob"
+    queue: default
+    description: "Generate embeddings for cards without them"
