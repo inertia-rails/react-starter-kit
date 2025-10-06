@@ -315,14 +315,291 @@ sync.active_jobs.pluck(:class_name)
    - Run imports during low-traffic periods
    - Monitor database growth and optimize indexes
 
+## Automated Sync System
+
+### Overview
+
+The system now includes automated cron jobs that keep card data up-to-date without manual intervention. This ensures canonical images are always current and embeddings are generated for all cards.
+
+### Cron Job Schedule
+
+All cron jobs are configured in `config/schedule.yml` and run via Sidekiq-Cron:
+
+| Job | Schedule | Description |
+|-----|----------|-------------|
+| `ScryfallDefaultCardsSyncJob` | Every hour (:15) | Syncs default_cards dataset to keep canonical images current |
+| `ScryfallAllCardsSyncJob` | Daily at 06:00 UTC (midnight CST) | Syncs all_cards dataset for complete printing data |
+| `HourlyEmbeddingGenerationJob` | Every hour (:30) | Generates embeddings for up to 100 cards without them |
+| `ClearSidekiqJobsJob` | Every hour (:12) | Cleans up finished job stats |
+
+### Default Printing System
+
+#### How Default Printings Work
+
+When `default_cards` sync runs:
+1. Scryfall provides one "canonical" printing per card
+2. System marks this printing with `is_default: true` in `card_printings` table
+3. Other printings of the same card have `is_default: false`
+4. OpenSearch indexer uses default printing for card images
+
+#### Benefits
+
+- **Consistent Images**: Search always shows Scryfall's canonical card image
+- **Language Filtering**: Default printings are always English
+- **Auto-Updates**: When Scryfall changes the default (new set release), hourly sync updates it
+- **Deck Builder Ready**: All printings still available in database for future features
+
+#### Database Schema Addition
+
+```ruby
+# card_printings table
+add_column :card_printings, :is_default, :boolean, default: false, null: false
+add_index :card_printings, :is_default
+```
+
+### Embedding Generation System
+
+#### How It Works
+
+1. **Hourly Job** (`HourlyEmbeddingGenerationJob`)
+   - Finds up to 100 cards without embeddings (`embeddings_generated_at: nil`)
+   - Only considers cards legal/banned/restricted in at least one format
+   - Creates an `EmbeddingRun` to track progress
+   - Queues `EmbeddingBackfillJob`
+
+2. **Backfill Job** (`EmbeddingBackfillJob`)
+   - Generates embeddings using OpenAI API
+   - Updates `embeddings_generated_at` timestamp
+   - Re-indexes cards in OpenSearch with embeddings
+   - Handles rate limiting with delays between batches
+
+3. **Invalidation** (via OpenSearch migrations)
+   - `invalidate_embeddings` method in migrations
+   - Clears all `embeddings_generated_at` timestamps
+   - Forces regeneration on next hourly run
+   - Useful when embedding logic or model changes
+
+### Job Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         AUTOMATED JOBS                              │
+└─────────────────────────────────────────────────────────────────────┘
+
+CRON TRIGGERS (Sidekiq-Cron in config/schedule.yml)
+═══════════════════════════════════════════════════
+
+Every Hour at :15                    Daily at 06:00 UTC
+       │                                    │
+       ▼                                    ▼
+┌──────────────────────┐           ┌──────────────────────┐
+│ Default Cards Sync   │           │  All Cards Sync      │
+│ Job                  │           │  Job                 │
+└──────┬───────────────┘           └──────┬───────────────┘
+       │                                  │
+       │ Creates ScryfallSync             │ Creates ScryfallSync
+       │ if not in progress               │ if not in progress
+       │                                  │
+       ▼                                  ▼
+┌─────────────────────────────────────────────────────────┐
+│              ScryfallSyncJob                            │
+│  1. Download bulk data file                             │
+│  2. Check version (skip if up-to-date)                  │
+│  3. Save to storage/scryfall/{type}/                    │
+└──────┬──────────────────────────────────────────────────┘
+       │
+       │ Auto-queues on completion
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│         ScryfallProcessingJob                           │
+│  1. Count total records                                 │
+│  2. Read file line by line (streaming)                  │
+│  3. Batch records (default: 500 per batch)              │
+│  4. Queue batch import jobs                             │
+└──────┬──────────────────────────────────────────────────┘
+       │
+       │ Queues multiple batch jobs
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│         ScryfallBatchImportJob (parallel)               │
+│  • import_card_printing(data, sync_type: type)          │
+│  • Mark is_default=true for default_cards               │
+│  • Mark is_default=false for other printings            │
+└──────┬──────────────────────────────────────────────────┘
+       │
+       │ On is_default change
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│    CardPrinting after_commit callback                   │
+│    • Triggers when is_default changes                   │
+└──────┬──────────────────────────────────────────────────┘
+       │
+       │ Queues update job
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│         OpenSearchCardUpdateJob                         │
+│  • Reindexes card with new default printing             │
+│  • Updates image URIs in search index                   │
+└─────────────────────────────────────────────────────────┘
+
+
+EMBEDDING GENERATION FLOW
+══════════════════════════
+
+Every Hour at :30
+       │
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│    HourlyEmbeddingGenerationJob                          │
+│  • Find up to 100 cards without embeddings               │
+│  • Create EmbeddingRun                                   │
+│  • Queue backfill job                                    │
+└──────┬───────────────────────────────────────────────────┘
+       │
+       │ Queues backfill
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│         EmbeddingBackfillJob                             │
+│  • Generate embeddings via OpenAI                        │
+│  • Update embeddings_generated_at timestamp              │
+│  • Reindex cards in OpenSearch                           │
+│  • Respect rate limits                                   │
+└──────────────────────────────────────────────────────────┘
+
+
+MANUAL TRIGGERS
+═══════════════
+
+Card.save or Card.update
+       │
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│    Card after_commit callback                            │
+└──────┬───────────────────────────────────────────────────┘
+       │
+       │ Queues update
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│         OpenSearchCardUpdateJob                          │
+│  • Index or delete card in OpenSearch                    │
+└──────────────────────────────────────────────────────────┘
+
+
+OPENSEARCH MIGRATIONS
+══════════════════════
+
+bin/rails deploy (docker-entrypoint)
+       │
+       │ Auto-runs migrations
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│    rake opensearch:migrate:run                           │
+│  • Checks for pending migrations                         │
+│  • Runs migration.up methods                             │
+│  • Available methods:                                    │
+│    - add_field                                           │
+│    - update_documents                                    │
+│    - reindex_if_needed                                   │
+│    - invalidate_embeddings  ← Forces embedding regen     │
+└──────────────────────────────────────────────────────────┘
+```
+
+### OpenSearch Migration Example
+
+Force embedding regeneration when logic changes:
+
+```ruby
+# db/opensearch_migrations/20250106000001_regenerate_embeddings.rb
+class RegenerateEmbeddings < Search::Migration
+  def up
+    # Clear all embedding timestamps
+    invalidate_embeddings
+
+    # Embeddings will be regenerated by hourly job
+  end
+end
+```
+
+### Monitoring
+
+#### Check Cron Job Status
+
+```bash
+# View all scheduled jobs in Sidekiq web UI
+open http://localhost:3000/jobs
+
+# Or via Rails console
+Sidekiq::Cron::Job.all
+```
+
+#### Check Sync Status
+
+```bash
+rake scryfall:status
+```
+
+#### Check Embedding Progress
+
+```ruby
+# Rails console
+EmbeddingRun.recent.first
+Card.where(embeddings_generated_at: nil).count
+```
+
+#### Check Default Printings
+
+```ruby
+# Rails console
+CardPrinting.where(is_default: true).count  # Should equal Card.count
+Card.find_by(name: "Lightning Bolt").card_printings.find_by(is_default: true)
+```
+
+### Configuration
+
+#### Adjusting Schedules
+
+Edit `config/schedule.yml`:
+
+```yaml
+production:
+  sync_default_cards:
+    cron: "15 * * * *"  # Change frequency here
+    class: "ScryfallDefaultCardsSyncJob"
+    queue: default
+```
+
+#### Adjusting Embedding Batch Size
+
+Edit `app/jobs/hourly_embedding_generation_job.rb`:
+
+```ruby
+BATCH_SIZE = 100  # Increase for faster processing, decrease for lower API usage
+```
+
+### Cost Considerations
+
+#### OpenAI Embedding API
+
+- Model: `text-embedding-3-small`
+- Hourly job processes up to 100 cards
+- Cost: ~$0.001 per 100 cards
+- Monthly cost (if always 100 cards/hour): ~$7.20
+
+To reduce costs:
+- Decrease `BATCH_SIZE` in `HourlyEmbeddingGenerationJob`
+- Run less frequently by adjusting cron schedule
+- Disable for development: Remove from `config/schedule.yml`
+
 ## Integration Points
 
 ### With Rails Application
 - Models provide ActiveRecord interface
 - Background jobs integrate with existing job infrastructure
 - Storage uses Rails storage paths
+- Automated cron jobs via Sidekiq-Cron
 
 ### With External Services
 - Scryfall API for bulk data endpoints
+- OpenAI API for embedding generation
 - Can be extended to sync prices, market data
 - Webhook support could be added for real-time updates

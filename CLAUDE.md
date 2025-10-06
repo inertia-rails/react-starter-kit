@@ -70,6 +70,26 @@ rake scryfall:status
 rake scryfall:process[oracle_cards]
 ```
 
+### Automated Background Jobs
+
+The application runs automated cron jobs via Sidekiq-Cron (configured in `config/schedule.yml`):
+
+```bash
+# View scheduled jobs in Sidekiq Web UI
+open http://localhost:3000/jobs
+
+# Check in Rails console
+Sidekiq::Cron::Job.all
+```
+
+**Automated Jobs:**
+- **Every hour at :15** - Sync default_cards (canonical card images)
+- **Daily at 06:00 UTC** - Sync all_cards (complete printing data)
+- **Every hour at :30** - Generate embeddings for cards without them (up to 100/hour)
+- **Every hour at :12** - Clear finished job stats
+
+See `docs/scryfall-sync.md` for complete job flow diagram and details.
+
 ### OpenSearch Card Search
 
 ```bash
@@ -102,10 +122,11 @@ rake opensearch:delete         # Remove index
 
 1. **Inertia.js Integration**: Pages are React components served via Rails controllers using `inertia` render method. Props are passed from controllers to React pages seamlessly.
 
-2. **Background Job Processing**: Uses Sidekiq with three job types:
-   - `ScryfallSyncJob`: Downloads bulk data files
-   - `ScryfallProcessingJob`: Orchestrates batch processing
-   - `ScryfallBatchImportJob`: Imports data in parallel batches (on low priority queue)
+2. **Background Job Processing**: Uses Sidekiq for background jobs and Sidekiq-Cron for scheduled jobs
+   - **Sync Jobs**: `ScryfallSyncJob`, `ScryfallProcessingJob`, `ScryfallBatchImportJob`
+   - **Automated Sync**: `ScryfallDefaultCardsSyncJob` (hourly), `ScryfallAllCardsSyncJob` (daily)
+   - **Embedding Jobs**: `HourlyEmbeddingGenerationJob`, `EmbeddingBackfillJob`
+   - **Search Jobs**: `OpenSearchCardUpdateJob`, `OpenSearchReindexJob`
 
 3. **State Machine Pattern**: `ScryfallSync` model uses AASM for state transitions (pending → downloading → completed/failed)
 
@@ -116,14 +137,37 @@ rake opensearch:delete         # Remove index
 ### Data Model
 
 Core models for Magic: The Gathering data:
-- `Card`: Oracle card data (canonical version)
+- `Card`: Oracle card data (canonical version with `embeddings_generated_at` timestamp)
 - `CardSet`: Sets and expansions
-- `CardPrinting`: Individual printings of cards
+- `CardPrinting`: Individual printings of cards (includes `is_default` flag for canonical images)
 - `CardFace`: Multi-faced card data
 - `CardRuling`: Official rulings
 - `CardLegality`: Format legalities
 - `RelatedCard`: Card relationships (tokens, meld, etc.)
-- `ScryfallSync`: Tracks sync operations with progress
+- `ScryfallSync`: Tracks sync operations with progress and state machine
+- `EmbeddingRun`: Tracks embedding generation runs
+- `OpenSearchSync`: Tracks OpenSearch reindex operations
+- `OpensearchMigration`: Tracks applied OpenSearch migrations
+
+### Automated Workflows
+
+1. **Default Printing System**:
+   - Hourly sync of `default_cards` marks canonical printings with `is_default: true`
+   - OpenSearch uses default printing for card images in search results
+   - When default changes, `CardPrinting` after_commit callback triggers OpenSearch reindex
+   - Daily sync of `all_cards` keeps complete printing data for deck builder
+
+2. **Embedding Generation**:
+   - Hourly job finds up to 100 cards without embeddings
+   - Generates semantic embeddings via OpenAI API (`text-embedding-3-small`)
+   - Re-indexes cards in OpenSearch with embeddings for hybrid search
+   - Can be invalidated via OpenSearch migrations to force regeneration
+
+3. **OpenSearch Migrations**:
+   - Auto-run on deploy via `docker-entrypoint`
+   - Versioned like Rails migrations in `db/opensearch_migrations/`
+   - Support field additions, document updates, and reindexing
+   - Tracked in `opensearch_migrations` table
 
 ### Frontend Structure
 
