@@ -21,6 +21,7 @@ class ScryfallSync < ApplicationRecord
     state :completed
     state :failed
     state :cancelled
+    state :skipped
 
     event :start do
       transitions from: :pending, to: :downloading do
@@ -46,6 +47,15 @@ class ScryfallSync < ApplicationRecord
         after do |error_message|
           self.completed_at = Time.current
           self.error_message = error_message
+        end
+      end
+    end
+
+    event :skip do
+      transitions from: :pending, to: :skipped do
+        after do |message|
+          self.completed_at = Time.current
+          self.error_message = message
         end
       end
     end

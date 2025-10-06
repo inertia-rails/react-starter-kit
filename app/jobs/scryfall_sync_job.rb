@@ -10,12 +10,7 @@ class ScryfallSyncJob < ApplicationJob
     sync = ScryfallSync.find(sync_id)
     return unless sync.may_start?
 
-    sync.start!
-    sync.save!
-
-    # Check if cancelled after starting
-    return if sync.reload.cancelled?
-
+    # Fetch bulk data info BEFORE starting download
     bulk_data = fetch_bulk_data_info(sync.sync_type)
     unless bulk_data
       sync.fail!("Could not fetch bulk data info for type: #{sync.sync_type}")
@@ -27,12 +22,17 @@ class ScryfallSyncJob < ApplicationJob
     download_uri = bulk_data.download_uri
     file_size = bulk_data.size
 
+    # Check if we already have this version BEFORE starting
     latest_sync = ScryfallSync.latest_for_type(sync.sync_type)
     if latest_sync && !latest_sync.needs_update?(remote_version)
-      sync.fail!("Already have the latest version: #{remote_version}")
+      sync.skip!("Already have the latest version: #{remote_version}")
       sync.save!
       return
     end
+
+    # Now start the download
+    sync.start!
+    sync.save!
 
     # Check if cancelled before download
     return if sync.reload.cancelled?
