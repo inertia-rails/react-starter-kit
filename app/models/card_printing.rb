@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
 class CardPrinting < ApplicationRecord
+  # Class attribute to control OpenSearch callbacks during bulk operations
+  class_attribute :skip_opensearch_callbacks, default: false
+
   # Associations
   belongs_to :card
   belongs_to :card_set
+
+  # OpenSearch indexing callbacks - trigger when default printing changes
+  after_commit :reindex_card_in_opensearch, if: :should_reindex_card?, unless: :skip_opensearch_callbacks?
 
   # Validations
   validates :collector_number, presence: true
@@ -112,5 +118,20 @@ class CardPrinting < ApplicationRecord
 
   def set_code
     card_set.code
+  end
+
+  def skip_opensearch_callbacks?
+    self.class.skip_opensearch_callbacks
+  end
+
+  private
+
+  # Trigger reindex when is_default changes (default printing changes)
+  def should_reindex_card?
+    saved_change_to_is_default?
+  end
+
+  def reindex_card_in_opensearch
+    OpenSearchCardUpdateJob.perform_later(card_id, "index")
   end
 end

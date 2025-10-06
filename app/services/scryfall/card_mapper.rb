@@ -79,7 +79,7 @@ module Scryfall
       card
     end
 
-    def import_card_printing(data)
+    def import_card_printing(data, sync_type: nil)
       # Ensure set exists
       set = find_or_create_set(data)
 
@@ -99,6 +99,9 @@ module Scryfall
         card_set_id: set.id,
         collector_number: data["collector_number"]
       )
+
+      # Determine if this printing should be marked as default
+      is_default = sync_type == "default_cards"
 
       printing.assign_attributes(
         scryfall_id: UuidValidator.validate_and_log(data["id"], record_type: "card_printing", record_id: data["id"], field: "scryfall_id"),
@@ -132,10 +135,20 @@ module Scryfall
         content_warning: data["content_warning"] || false,
         variation_of: data["variation_of"],
         purchase_uris: data["purchase_uris"] || {},
-        related_uris: data["related_uris"] || {}
+        related_uris: data["related_uris"] || {},
+        is_default: is_default
       )
 
-      printing.save!
+      # When importing default_cards, mark other printings of this card as NOT default
+      if is_default && printing.save!
+        CardPrinting.where(card_id: card.id)
+                    .where.not(id: printing.id)
+                    .where(is_default: true)
+                    .update_all(is_default: false)
+      else
+        printing.save!
+      end
+
       printing
     end
 

@@ -81,6 +81,22 @@ module Search
       end
     end
 
+    # DSL method: Invalidate all card embeddings to force regeneration
+    # Useful when embedding logic or model changes
+    def invalidate_embeddings
+      Rails.logger.info("OpenSearch Migration: Invalidating all embeddings...")
+
+      count = Card.where.not(embeddings_generated_at: nil).count
+      Card.where.not(embeddings_generated_at: nil).update_all(embeddings_generated_at: nil)
+
+      Rails.logger.info("OpenSearch Migration: Invalidated #{count} card embeddings")
+      Rails.logger.info("Embeddings will be regenerated on next hourly embedding job or manual backfill")
+      true
+    rescue StandardError => e
+      Rails.logger.error("OpenSearch Migration: Failed to invalidate embeddings: #{e.message}")
+      false
+    end
+
     # Subclasses must override these
     def up
       raise NotImplementedError, "#{self.class.name} must implement #up"

@@ -84,9 +84,10 @@ class ScryfallBatchImportJob < ApplicationJob
 
     # Disable OpenSearch callbacks during bulk import for performance
     Card.skip_opensearch_callbacks = true
+    CardPrinting.skip_opensearch_callbacks = true
 
     records.each_with_index do |record, index|
-      mapper.import_card_printing(record)
+      mapper.import_card_printing(record, sync_type: @sync_type)
       success_count += 1
     rescue ActiveRecord::RecordInvalid => e
       failed_count += 1
@@ -156,6 +157,7 @@ class ScryfallBatchImportJob < ApplicationJob
   ensure
     # Re-enable callbacks after batch completes
     Card.skip_opensearch_callbacks = false
+    CardPrinting.skip_opensearch_callbacks = false
   end
 
   def process_rulings(records)

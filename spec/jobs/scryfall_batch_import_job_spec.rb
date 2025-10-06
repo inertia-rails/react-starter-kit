@@ -132,7 +132,7 @@ RSpec.describe ScryfallBatchImportJob, type: :job do
           it "imports card printings" do
             mapper = instance_double(Scryfall::CardMapper)
             allow(Scryfall::CardMapper).to receive(:new).and_return(mapper)
-            expect(mapper).to receive(:import_card_printing).with(records[0])
+            expect(mapper).to receive(:import_card_printing).with(records[0], sync_type: printing_type)
 
             perform_enqueued_jobs do
               described_class.perform_later(

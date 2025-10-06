@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_05_201018) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_06_022004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -96,11 +96,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_05_201018) do
     t.jsonb "related_uris", default: {}, comment: "Related URIs for this printing"
     t.jsonb "artist_ids", default: [], comment: "Array of artist IDs"
     t.string "lang", default: "en", null: false
+    t.boolean "is_default", default: false, null: false
     t.index ["artist"], name: "index_card_printings_on_artist"
     t.index ["card_back_id"], name: "index_card_printings_on_card_back_id"
     t.index ["card_id", "card_set_id", "collector_number"], name: "idx_printings_unique", unique: true
     t.index ["card_id"], name: "index_card_printings_on_card_id"
     t.index ["card_set_id"], name: "index_card_printings_on_card_set_id"
+    t.index ["is_default"], name: "index_card_printings_on_is_default"
     t.index ["lang"], name: "index_card_printings_on_lang"
     t.index ["prices"], name: "index_card_printings_on_prices", using: :gin
     t.index ["rarity"], name: "index_card_printings_on_rarity"

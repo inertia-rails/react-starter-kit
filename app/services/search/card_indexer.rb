@@ -391,12 +391,16 @@ module Search
     end
 
     def card_document(card)
-      # Get first ENGLISH printing for image data, prioritizing non-foil variants
-      # Manually filter to avoid scope issues with preloaded associations
+      # Get printing for image data with the following priority:
+      # 1. Default printing (marked by Scryfall's default_cards dataset)
+      # 2. English printing with nonfoil finish
+      # 3. Any English printing
+      # 4. Any printing at all
       english_printings = card.card_printings.select { |p| p.lang == "en" }
-      printing = english_printings.find { |p| p.finishes&.include?("nonfoil") } ||
+      printing = card.card_printings.find { |p| p.is_default } ||
+                 english_printings.find { |p| p.finishes&.include?("nonfoil") } ||
                  english_printings.first ||
-                 card.card_printings.first # Fallback to any printing if no English ones exist
+                 card.card_printings.first
 
       # For multi-faced cards without image_uris on printings, use card_faces
       image_uris = if card.card_faces.any? && card.card_faces.first.image_uris.present?
