@@ -40,7 +40,8 @@
       "Bash(git push:*)",
       "Bash(RAILS_ENV=test bundle exec rspec --format progress)",
       "Bash(RAILS_ENV=test bundle exec rspec --format documentation --only-failures)",
-      "Bash(RAILS_ENV=test bundle exec rspec spec/jobs/scryfall_batch_import_job_spec.rb --format documentation)"
+      "Bash(RAILS_ENV=test bundle exec rspec spec/jobs/scryfall_batch_import_job_spec.rb --format documentation)",
+      "Bash(env RAILS_ENV=production bin/rails db:prepare --trace)"
     ],
     "deny": [],
     "ask": []
