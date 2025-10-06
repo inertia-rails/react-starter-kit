@@ -45,12 +45,14 @@ class ScryfallBatchImportJob < ApplicationJob
     mapper = Scryfall::CardMapper.new
     failed_count = 0
     success_count = 0
+    card_ids = []
 
     # Disable OpenSearch callbacks during bulk import for performance
     Card.skip_opensearch_callbacks = true
 
     records.each do |record|
-      mapper.import_oracle_card(record)
+      card = mapper.import_oracle_card(record)
+      card_ids << card.id if card
       success_count += 1
     rescue StandardError => e
       failed_count += 1
@@ -74,6 +76,9 @@ class ScryfallBatchImportJob < ApplicationJob
   ensure
     # Re-enable callbacks after batch completes
     Card.skip_opensearch_callbacks = false
+
+    # Queue OpenSearch indexing for cards that were imported
+    queue_opensearch_jobs(card_ids)
   end
 
   def process_card_printings(records)
@@ -81,13 +86,15 @@ class ScryfallBatchImportJob < ApplicationJob
     failed_count = 0
     success_count = 0
     error_summary = Hash.new(0)
+    card_ids = Set.new
 
     # Disable OpenSearch callbacks during bulk import for performance
     Card.skip_opensearch_callbacks = true
     CardPrinting.skip_opensearch_callbacks = true
 
     records.each_with_index do |record, index|
-      mapper.import_card_printing(record, sync_type: @sync_type)
+      printing = mapper.import_card_printing(record, sync_type: @sync_type)
+      card_ids.add(printing.card_id) if printing
       success_count += 1
     rescue ActiveRecord::RecordInvalid => e
       failed_count += 1
@@ -158,6 +165,9 @@ class ScryfallBatchImportJob < ApplicationJob
     # Re-enable callbacks after batch completes
     Card.skip_opensearch_callbacks = false
     CardPrinting.skip_opensearch_callbacks = false
+
+    # Queue OpenSearch indexing for cards that were imported
+    queue_opensearch_jobs(card_ids.to_a) if card_ids
   end
 
   def process_rulings(records)
@@ -186,5 +196,15 @@ class ScryfallBatchImportJob < ApplicationJob
     end
 
     Rails.logger.info "Batch #{@batch_number}: Processed #{success_count} rulings, #{failed_count} failures"
+  end
+
+  def queue_opensearch_jobs(card_ids)
+    return if card_ids.blank?
+
+    Rails.logger.info "Batch #{@batch_number}: Queueing OpenSearch indexing for #{card_ids.size} cards"
+
+    card_ids.each do |card_id|
+      OpenSearchCardUpdateJob.perform_later(card_id, "index")
+    end
   end
 end

@@ -37,7 +37,10 @@
       "Bash(curl -s \"http://localhost:3000/api/cards/search?formats%5B%5D=commander&rarities%5B%5D=mythic\")",
       "Bash(curl -s \"http://localhost:3000/api/cards/search?q=lightning\")",
       "Bash(npx eslint:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(RAILS_ENV=test bundle exec rspec --format progress)",
+      "Bash(RAILS_ENV=test bundle exec rspec --format documentation --only-failures)",
+      "Bash(RAILS_ENV=test bundle exec rspec spec/jobs/scryfall_batch_import_job_spec.rb --format documentation)"
     ],
     "deny": [],
     "ask": []

@@ -590,6 +590,39 @@ To reduce costs:
 - Run less frequently by adjusting cron schedule
 - Disable for development: Remove from `config/schedule.yml`
 
+### Automatic OpenSearch Indexing
+
+The system automatically indexes cards in OpenSearch as they're imported from Scryfall.
+
+**How it works:**
+1. Scryfall sync downloads and imports cards (callbacks disabled for performance)
+2. Each batch import job tracks which cards were imported
+3. After each batch completes, OpenSearch indexing jobs are queued for those specific cards
+4. Cards appear in search within seconds of being imported
+
+**Architecture:**
+- Callbacks disabled during bulk import (avoids queuing thousands of jobs simultaneously)
+- After batch: `OpenSearchCardUpdateJob.perform_later(card_id, "index")` for each card
+- Only cards that were actually imported/updated are indexed
+- No race conditions - indexing happens after database save completes
+
+**First-time setup in production:**
+If your OpenSearch index is empty or outdated:
+```bash
+# After deploying the automated sync system
+rake opensearch:reset   # Creates fresh index
+# OR
+rake opensearch:reindex # Updates existing index
+
+# Then let automated syncs handle updates
+```
+
+**What gets indexed:**
+- New cards from syncs: ✅ Automatically indexed per-batch
+- Updated cards from syncs: ✅ Automatically indexed per-batch
+- Individual card updates: ✅ Via after_commit callbacks
+- Default printing changes: ✅ Via CardPrinting after_commit callbacks
+
 ## Integration Points
 
 ### With Rails Application
