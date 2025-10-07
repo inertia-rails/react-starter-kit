@@ -189,6 +189,9 @@ module Api
       # Sort order
       filters[:sort] = params[:sort] if params[:sort].present?
 
+      # Include tokens filter (allows tokens in search results)
+      filters[:include_tokens] = params[:include_tokens] if params[:include_tokens].present?
+
       filters
     end
   end
