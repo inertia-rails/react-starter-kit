@@ -8,12 +8,57 @@ RSpec.describe "Search Quality Evaluation", type: :system do
   # Or run via rake task: rake search:eval
   before(:all) do
     skip "Search evals should be run explicitly" unless ENV["RUN_SEARCH_EVALS"] == "true"
+
+    # Generate embeddings for all expected cards in test dataset
+    # This enables semantic and hybrid search modes to work in tests
+    self.class.ensure_test_embeddings
   end
 
   # Load dataset at class level for dynamic test generation
   GOLDEN_DATASET = YAML.load_file(Rails.root.join("spec/fixtures/search_evals.yml"))
 
   let(:search_service) { Search::CardSearch.new }
+
+  # Helper method to ensure all expected cards have embeddings in OpenSearch
+  def self.ensure_test_embeddings
+    Rails.logger.info("Ensuring test embeddings are generated...")
+
+    # Collect all expected card names from test dataset
+    expected_cards = GOLDEN_DATASET.flat_map { |test| test["expected_results"] || [] }.uniq
+
+    # Find cards in database
+    cards = Card.where(name: expected_cards).includes(:card_faces, :card_legalities, :card_printings)
+    found_names = cards.pluck(:name)
+    missing_names = expected_cards - found_names
+
+    if missing_names.any?
+      Rails.logger.warn("Warning: Expected cards not found in database: #{missing_names.join(", ")}")
+    end
+
+    # Generate and update embeddings for found cards
+    if cards.any?
+      indexer = Search::CardIndexer.new
+      cards.each do |card|
+        # Generate embedding
+        embedding = Search::EmbeddingService.embed_card(card)
+
+        if embedding.present?
+          # Update in OpenSearch
+          indexer.update_card_embedding(card.id, embedding)
+        else
+          Rails.logger.warn("Failed to generate embedding for #{card.name}")
+        end
+      end
+
+      # Refresh index to make embeddings immediately available
+      indexer.refresh_index
+
+      Rails.logger.info("Generated embeddings for #{cards.count} test cards")
+    end
+  rescue StandardError => e
+    Rails.logger.error("Failed to generate test embeddings: #{e.message}")
+    Rails.logger.error(e.backtrace.first(5).join("\n"))
+  end
 
   # Test each search mode separately
   %w[keyword semantic hybrid].each do |search_mode|
