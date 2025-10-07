@@ -36,16 +36,22 @@ module Search
         begin
           ensure_configured!
 
-          # ruby_llm may not support batch, so fall back to individual calls
-          normalized_texts.map do |text|
-            result = RubyLLM.embed(text)
-            result.respond_to?(:vectors) ? result.vectors : nil
-          end.compact
+          # Pass array to RubyLLM for batch processing (more efficient)
+          result = RubyLLM.embed(normalized_texts)
+          result.respond_to?(:vectors) ? result.vectors : []
         rescue StandardError => e
           Rails.logger.error("Batch embedding generation failed: #{e.message}")
           Rails.logger.error(e.backtrace.first(5).join("\n"))
           []
         end
+      end
+
+      # Generate embeddings for multiple cards in batch
+      def embed_cards_batch(cards)
+        return [] if cards.empty?
+
+        texts = cards.map { |card| card_to_text(card) }
+        embed_batch(texts)
       end
 
       # Generate embedding for a card based on its attributes
