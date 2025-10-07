@@ -7,7 +7,9 @@ class ScryfallProcessingJob < ApplicationJob
 
   def perform(sync_id)
     @sync = ScryfallSync.find(sync_id)
-    return unless @sync.completed? && @sync.file_path.present?
+    unless @sync.completed? && @sync.file_path.present?
+      raise "Unable to process sync #{sync_id}: download not completed or missing file"
+    end
 
     Rails.logger.info "Starting processing for #{@sync.sync_type} sync #{sync_id}"
 
