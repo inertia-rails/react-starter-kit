@@ -13,12 +13,10 @@ FactoryBot.define do
     colors { ["U"] }
     color_identity { ["U"] }
     layout { "normal" }
-    rarity { "common" }
-    flavor_text { "Knowledge is power." }
     loyalty { nil }
-    life { nil }
-    hand { nil }
-    defense { nil }
+    life_modifier { nil }
+    hand_modifier { nil }
+    image_status { "highres_scan" }
 
     trait :planeswalker do
       type_line { "Planeswalker — Jace" }
@@ -41,11 +39,6 @@ FactoryBot.define do
       oracle_text { "{T}: Add {C}." }
       power { nil }
       toughness { nil }
-    end
-
-    trait :double_faced do
-      layout { "transform" }
-      association :card_faces, factory: :card_face
     end
   end
 end
