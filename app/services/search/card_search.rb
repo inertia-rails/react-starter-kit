@@ -80,7 +80,9 @@ module Search
 
     def build_search_query(query, filters)
       query_clauses = []
-      filter_clauses = []
+
+      # Use build_filter_clauses to get all filters including defaults
+      filter_clauses = build_filter_clauses(filters)
 
       # Text search across multiple fields
       if query.present?
@@ -94,271 +96,38 @@ module Search
         }
       end
 
-      # Color identity filter
-      if filters[:colors].present?
-        colors = Array(filters[:colors])
-        if filters[:color_match] == "exact"
-          filter_clauses << {terms: {color_identity: colors}}
-        else
-          # Default: cards that include all specified colors
-          colors.each do |color|
-            filter_clauses << {term: {color_identity: color}}
-          end
-        end
-      end
+      # All other filters are handled by build_filter_clauses
 
-      # CMC (mana value) filters
-      if filters[:cmc_min].present? || filters[:cmc_max].present?
-        cmc_filter = {range: {cmc: {}}}
-        cmc_filter[:range][:cmc][:gte] = filters[:cmc_min].to_f if filters[:cmc_min].present?
-        cmc_filter[:range][:cmc][:lte] = filters[:cmc_max].to_f if filters[:cmc_max].present?
-        filter_clauses << cmc_filter
-      end
-
-      # Type line filter (partial match)
-      if filters[:types].present?
-        Array(filters[:types]).each do |card_type|
-          filter_clauses << {
-            match: {
-              type_line: {
-                query: card_type,
-                operator: "and"
-              }
-            }
-          }
-        end
-      end
-
-      # Format legality filter
-      if filters[:formats].present?
-        Array(filters[:formats]).each do |format|
-          filter_clauses << {
-            term: {
-              "legalities.#{format}": "legal"
-            }
-          }
-        end
-      end
-
-      # Keyword filter
-      if filters[:keywords].present?
-        Array(filters[:keywords]).each do |keyword|
-          filter_clauses << {term: {keywords: keyword}}
-        end
-      end
-
-      # Layout filter
-      if filters[:layout].present?
-        filter_clauses << {term: {layout: filters[:layout]}}
-      end
-
-      # Reserved list filter
-      if filters[:reserved].present?
-        filter_clauses << {term: {reserved: filters[:reserved] == "true"}}
-      end
-
-      # Rarity filter
-      if filters[:rarities].present?
-        filter_clauses << {terms: {rarity: Array(filters[:rarities])}}
-      end
-
-      # Power filter
-      if filters[:power_min].present? || filters[:power_max].present?
-        power_filter = {range: {power: {}}}
-        power_filter[:range][:power][:gte] = filters[:power_min].to_i if filters[:power_min].present?
-        power_filter[:range][:power][:lte] = filters[:power_max].to_i if filters[:power_max].present?
-        filter_clauses << power_filter
-      end
-
-      # Toughness filter
-      if filters[:toughness_min].present? || filters[:toughness_max].present?
-        toughness_filter = {range: {toughness: {}}}
-        toughness_filter[:range][:toughness][:gte] = filters[:toughness_min].to_i if filters[:toughness_min].present?
-        toughness_filter[:range][:toughness][:lte] = filters[:toughness_max].to_i if filters[:toughness_max].present?
-        filter_clauses << toughness_filter
-      end
-
-      # Loyalty filter
-      if filters[:loyalty_min].present? || filters[:loyalty_max].present?
-        loyalty_filter = {range: {loyalty: {}}}
-        loyalty_filter[:range][:loyalty][:gte] = filters[:loyalty_min] if filters[:loyalty_min].present?
-        loyalty_filter[:range][:loyalty][:lte] = filters[:loyalty_max] if filters[:loyalty_max].present?
-        filter_clauses << loyalty_filter
-      end
-
-      # EDHREC rank filter (lower is better/more popular)
-      if filters[:edhrec_rank_min].present? || filters[:edhrec_rank_max].present?
-        edhrec_filter = {range: {edhrec_rank: {}}}
-        edhrec_filter[:range][:edhrec_rank][:gte] = filters[:edhrec_rank_min].to_i if filters[:edhrec_rank_min].present?
-        edhrec_filter[:range][:edhrec_rank][:lte] = filters[:edhrec_rank_max].to_i if filters[:edhrec_rank_max].present?
-        filter_clauses << edhrec_filter
-      end
-
-      # Penny rank filter
-      if filters[:penny_rank_min].present? || filters[:penny_rank_max].present?
-        penny_filter = {range: {penny_rank: {}}}
-        penny_filter[:range][:penny_rank][:gte] = filters[:penny_rank_min].to_i if filters[:penny_rank_min].present?
-        penny_filter[:range][:penny_rank][:lte] = filters[:penny_rank_max].to_i if filters[:penny_rank_max].present?
-        filter_clauses << penny_filter
-      end
-
-      # Release date filter
-      if filters[:released_after].present? || filters[:released_before].present?
-        date_filter = {range: {released_at: {}}}
-        date_filter[:range][:released_at][:gte] = filters[:released_after] if filters[:released_after].present?
-        date_filter[:range][:released_at][:lte] = filters[:released_before] if filters[:released_before].present?
-        filter_clauses << date_filter
-      end
-
-      # Games/platforms filter
-      if filters[:games].present?
-        Array(filters[:games]).each do |game|
-          filter_clauses << {term: {games: game}}
-        end
-      end
-
-      # Produced mana filter
-      if filters[:produced_mana].present?
-        Array(filters[:produced_mana]).each do |mana|
-          filter_clauses << {term: {produced_mana: mana}}
-        end
-      end
-
-      # Finishes filter
-      if filters[:finishes].present?
-        Array(filters[:finishes]).each do |finish|
-          filter_clauses << {term: {finishes: finish}}
-        end
-      end
-
-      # Artist filter
-      if filters[:artists].present?
-        filter_clauses << {terms: {artists: Array(filters[:artists])}}
-      end
-
-      # Set filter
-      if filters[:sets].present?
-        filter_clauses << {terms: {sets: Array(filters[:sets])}}
-      end
-
-      # Frame filter
-      if filters[:frames].present?
-        filter_clauses << {terms: {frames: Array(filters[:frames])}}
-      end
-
-      # Border color filter
-      if filters[:border_colors].present?
-        filter_clauses << {terms: {border_colors: Array(filters[:border_colors])}}
-      end
-
-      # Frame effects filter
-      if filters[:frame_effects].present?
-        Array(filters[:frame_effects]).each do |effect|
-          filter_clauses << {term: {frame_effects: effect}}
-        end
-      end
-
-      # Promo types filter
-      if filters[:promo_types].present?
-        Array(filters[:promo_types]).each do |promo_type|
-          filter_clauses << {term: {promo_types: promo_type}}
-        end
-      end
-
-      # Color indicator filter
-      if filters[:color_indicator].present?
-        Array(filters[:color_indicator]).each do |color|
-          filter_clauses << {term: {color_indicator: color}}
-        end
-      end
-
-      # Boolean characteristic filters
-      filter_clauses << {term: {oversized: filters[:oversized] == "true"}} if filters[:oversized].present?
-      filter_clauses << {term: {promo: filters[:promo] == "true"}} if filters[:promo].present?
-      filter_clauses << {term: {reprint: filters[:reprint] == "true"}} if filters[:reprint].present?
-      filter_clauses << {term: {variation: filters[:variation] == "true"}} if filters[:variation].present?
-      filter_clauses << {term: {digital: filters[:digital] == "true"}} if filters[:digital].present?
-      filter_clauses << {term: {booster: filters[:booster] == "true"}} if filters[:booster].present?
-      filter_clauses << {term: {story_spotlight: filters[:story_spotlight] == "true"}} if filters[:story_spotlight].present?
-      filter_clauses << {term: {content_warning: filters[:content_warning] == "true"}} if filters[:content_warning].present?
-      filter_clauses << {term: {game_changer: filters[:game_changer] == "true"}} if filters[:game_changer].present?
-
-      # Derived filters for color identity
-      if filters[:colorless] == "true"
-        filter_clauses << {
-          bool: {
-            must_not: {exists: {field: "color_identity"}}
-          }
-        }
-      end
-
-      if filters[:mono_color] == "true"
-        filter_clauses << {
-          script: {
-            script: {
-              source: "doc['color_identity'].size() == 1"
-            }
-          }
-        }
-      end
-
-      if filters[:multicolor] == "true"
-        filter_clauses << {
-          script: {
-            script: {
-              source: "doc['color_identity'].size() > 1"
-            }
-          }
-        }
-      end
-
-      # Platform availability filters
-      if filters[:on_arena] == "true"
-        filter_clauses << {exists: {field: "arena_id"}}
-      end
-
-      if filters[:on_mtgo] == "true"
-        filter_clauses << {exists: {field: "mtgo_id"}}
-      end
-
-      # Price filters (USD)
-      if filters[:price_usd_min].present? || filters[:price_usd_max].present?
-        price_filter = {range: {price_usd: {}}}
-        price_filter[:range][:price_usd][:gte] = filters[:price_usd_min].to_f if filters[:price_usd_min].present?
-        price_filter[:range][:price_usd][:lte] = filters[:price_usd_max].to_f if filters[:price_usd_max].present?
-        filter_clauses << price_filter
-      end
-
-      # Price filters (USD Foil)
-      if filters[:price_usd_foil_min].present? || filters[:price_usd_foil_max].present?
-        price_filter = {range: {price_usd_foil: {}}}
-        price_filter[:range][:price_usd_foil][:gte] = filters[:price_usd_foil_min].to_f if filters[:price_usd_foil_min].present?
-        price_filter[:range][:price_usd_foil][:lte] = filters[:price_usd_foil_max].to_f if filters[:price_usd_foil_max].present?
-        filter_clauses << price_filter
-      end
-
-      # Price filters (EUR)
-      if filters[:price_eur_min].present? || filters[:price_eur_max].present?
-        price_filter = {range: {price_eur: {}}}
-        price_filter[:range][:price_eur][:gte] = filters[:price_eur_min].to_f if filters[:price_eur_min].present?
-        price_filter[:range][:price_eur][:lte] = filters[:price_eur_max].to_f if filters[:price_eur_max].present?
-        filter_clauses << price_filter
-      end
-
-      # Price filters (MTGO Tix)
-      if filters[:price_tix_min].present? || filters[:price_tix_max].present?
-        price_filter = {range: {price_tix: {}}}
-        price_filter[:range][:price_tix][:gte] = filters[:price_tix_min].to_f if filters[:price_tix_min].present?
-        price_filter[:range][:price_tix][:lte] = filters[:price_tix_max].to_f if filters[:price_tix_max].present?
-        filter_clauses << price_filter
-      end
-
-      # Build the final query
+      # Build the final query with ranking boosts
       {
         query: {
-          bool: {
-            must: query_clauses.any? ? query_clauses : [{match_all: {}}],
-            filter: filter_clauses
+          function_score: {
+            query: {
+              bool: {
+                must: query_clauses.any? ? query_clauses : [{match_all: {}}],
+                filter: filter_clauses
+              }
+            },
+            functions: [
+              # EDHREC popularity boost (lower rank = more popular)
+              {
+                filter: {exists: {field: "edhrec_rank"}},
+                script_score: {
+                  script: {
+                    source: "Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0)",
+                    lang: "painless"
+                  }
+                },
+                weight: 1.5
+              },
+              # Recency boost for cards released in the last 2 years
+              {
+                filter: {range: {released_at: {gte: "now-2y"}}},
+                weight: 1.3
+              }
+            ],
+            score_mode: "sum",
+            boost_mode: "multiply"
           }
         },
         sort: build_sort_options(filters[:sort]),
@@ -477,16 +246,40 @@ module Search
 
       filter_clauses = build_filter_clauses(filters)
 
-      # Use k-NN with post-filtering for better semantic ranking
+      # Use k-NN with post-filtering and function_score for ranking boosts
       # Get more candidates (k=200) and then filter to allow semantic relevance to dominate
       search_query = {
         size: 20, # Will be overridden by caller
         query: {
-          knn: {
-            embedding: {
-              vector: query_embedding,
-              k: 200 # Increased k to get more candidates before filtering
-            }
+          function_score: {
+            query: {
+              knn: {
+                embedding: {
+                  vector: query_embedding,
+                  k: 200 # Increased k to get more candidates before filtering
+                }
+              }
+            },
+            functions: [
+              # EDHREC popularity boost
+              {
+                filter: {exists: {field: "edhrec_rank"}},
+                script_score: {
+                  script: {
+                    source: "Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0)",
+                    lang: "painless"
+                  }
+                },
+                weight: 1.5
+              },
+              # Recency boost
+              {
+                filter: {range: {released_at: {gte: "now-2y"}}},
+                weight: 1.3
+              }
+            ],
+            score_mode: "sum",
+            boost_mode: "multiply"
           }
         },
         _source: {excludes: ["embedding"]}
@@ -515,37 +308,62 @@ module Search
       filter_clauses = build_filter_clauses(filters)
 
       # Hybrid approach: Use script_score to combine k-NN similarity with keyword relevance
-      # This properly combines both signals into a single score
+      # Then wrap in function_score to add popularity and recency boosts
       {
         query: {
-          script_score: {
+          function_score: {
             query: {
-              bool: {
-                should: [
-                  # Keyword search component
-                  {
-                    multi_match: {
-                      query: query,
-                      fields: ["name^3", "oracle_text", "type_line^2", "card_faces.name^2", "card_faces.oracle_text"],
-                      type: "best_fields",
-                      fuzziness: "AUTO"
-                    }
+              script_score: {
+                query: {
+                  bool: {
+                    should: [
+                      # Keyword search component
+                      {
+                        multi_match: {
+                          query: query,
+                          fields: ["name^3", "oracle_text", "type_line^2", "card_faces.name^2", "card_faces.oracle_text"],
+                          type: "best_fields",
+                          fuzziness: "AUTO"
+                        }
+                      }
+                    ],
+                    filter: filter_clauses,
+                    minimum_should_match: 0 # Allow either keyword or semantic to match
                   }
-                ],
-                filter: filter_clauses,
-                minimum_should_match: 0 # Allow either keyword or semantic to match
+                },
+                script: {
+                  source: """
+                    double keywordScore = Math.max(_score, 0.1);
+                    double vectorScore = doc['embedding'].size() == 0 ? 0.0 : cosineSimilarity(params.query_vector, doc['embedding']) + 1.0;
+                    return (vectorScore * 3.0) + (keywordScore * 1.0);
+                  """,
+                  params: {
+                    query_vector: query_embedding
+                  }
+                }
               }
             },
-            script: {
-              source: """
-                double keywordScore = Math.max(_score, 0.1);
-                double vectorScore = doc['embedding'].size() == 0 ? 0.0 : cosineSimilarity(params.query_vector, doc['embedding']) + 1.0;
-                return (vectorScore * 3.0) + (keywordScore * 1.0);
-              """,
-              params: {
-                query_vector: query_embedding
+            functions: [
+              # EDHREC popularity boost (lower rank = more popular)
+              # Boost popular cards but don't penalize cards without ranks
+              {
+                filter: {exists: {field: "edhrec_rank"}},
+                script_score: {
+                  script: {
+                    source: "Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0)",
+                    lang: "painless"
+                  }
+                },
+                weight: 1.5
+              },
+              # Recency boost for cards released in the last 2 years
+              {
+                filter: {range: {released_at: {gte: "now-2y"}}},
+                weight: 1.3
               }
-            }
+            ],
+            score_mode: "sum",
+            boost_mode: "multiply"
           }
         },
         _source: {excludes: ["embedding"]}
@@ -559,6 +377,50 @@ module Search
       # Language filter - default to English unless specified
       lang = filters[:lang] || "en"
       filter_clauses << {term: {lang: lang}} if lang.present?
+
+      # Default paper-only filter - exclude digital-only cards unless user explicitly filters for digital platforms
+      # If user specifies arena or mtgo in games filter, allow those digital cards
+      unless filters[:games].present? && (filters[:games].include?("arena") || filters[:games].include?("mtgo"))
+        filter_clauses << {term: {games: "paper"}}
+      end
+
+      # Exclude non-playable layouts by default (tokens, art cards, emblems, etc.)
+      # Allow if user explicitly includes tokens or searches for token type
+      non_playable_layouts = ["token", "double_faced_token", "art_series", "emblem"]
+      unless filters[:include_tokens] == "true" || filters[:types]&.any? { |t| t.downcase.include?("token") }
+        filter_clauses << {
+          bool: {
+            must_not: {terms: {layout: non_playable_layouts}}
+          }
+        }
+      end
+
+      # Require cards to be legal in at least one format
+      # This excludes unplayable cards like art cards that have no legality
+      # Check all known Magic formats for "legal" status
+      filter_clauses << {
+        bool: {
+          should: [
+            {term: {"legalities.standard": "legal"}},
+            {term: {"legalities.pioneer": "legal"}},
+            {term: {"legalities.modern": "legal"}},
+            {term: {"legalities.legacy": "legal"}},
+            {term: {"legalities.vintage": "legal"}},
+            {term: {"legalities.commander": "legal"}},
+            {term: {"legalities.oathbreaker": "legal"}},
+            {term: {"legalities.brawl": "legal"}},
+            {term: {"legalities.historic": "legal"}},
+            {term: {"legalities.gladiator": "legal"}},
+            {term: {"legalities.duel": "legal"}},
+            {term: {"legalities.penny": "legal"}},
+            {term: {"legalities.timeless": "legal"}},
+            {term: {"legalities.alchemy": "legal"}},
+            {term: {"legalities.pauper": "legal"}},
+            {term: {"legalities.paupercommander": "legal"}}
+          ],
+          minimum_should_match: 1
+        }
+      }
 
       # Color identity filter
       if filters[:colors].present?
