@@ -40,32 +40,50 @@ class EmbeddingBackfillJob < ApplicationJob
         batch_start = Time.now
         Rails.logger.info("Processing batch of #{batch.size} cards (starting with #{batch.first.name})...")
 
-        # Temporarily enable embedding generation
-        original_env = ENV["GENERATE_EMBEDDINGS"]
-        ENV["GENERATE_EMBEDDINGS"] = "true"
+        begin
+          # Generate embeddings for the entire batch at once
+          embeddings = Search::EmbeddingService.embed_cards_batch(batch)
 
-        batch.each do |card|
-          begin
-            # Reindex the card (this will generate and include the embedding)
-            success = indexer.index_card(card)
+          if embeddings.empty?
+            Rails.logger.error("Batch embedding generation returned empty results")
+            failed += batch.size
+          else
 
-            if success
-              # Mark card as having embeddings generated
-              card.update_column(:embeddings_generated_at, Time.current)
-              processed += 1
-            else
-              Rails.logger.warn("Failed to index card #{card.id} (#{card.name})")
-              failed += 1
+            if embeddings.size != batch.size
+              Rails.logger.warn("Batch embedding size mismatch: #{embeddings.size} embeddings for #{batch.size} cards")
             end
-          rescue StandardError => e
-            Rails.logger.error("Failed to process card #{card.id} (#{card.name}): #{e.message}")
-            Rails.logger.error(e.backtrace.first(3).join("\n"))
-            failed += 1
-          end
-        end
 
-        # Restore original env
-        ENV["GENERATE_EMBEDDINGS"] = original_env
+            # Prepare updates for OpenSearch
+            updates = batch.zip(embeddings).filter_map do |card, embedding|
+              if embedding.present?
+                {id: card.id, embedding: embedding}
+              else
+                Rails.logger.warn("Missing embedding for card #{card.id} (#{card.name})")
+                failed += 1
+                nil
+              end
+            end
+
+            # Update embeddings in OpenSearch (partial update)
+            if updates.any?
+              success = indexer.bulk_update_embeddings(updates)
+
+              if success
+                # Mark cards as having embeddings generated
+                card_ids = updates.map { |u| u[:id] }
+                Card.where(id: card_ids).update_all(embeddings_generated_at: Time.current)
+                processed += updates.size
+              else
+                Rails.logger.error("Failed to update embeddings in OpenSearch for batch")
+                failed += updates.size
+              end
+            end
+          end
+        rescue StandardError => e
+          Rails.logger.error("Failed to process batch: #{e.message}")
+          Rails.logger.error(e.backtrace.first(5).join("\n"))
+          failed += batch.size
+        end
 
         # Update progress
         embedding_run.update_progress!(processed: processed, failed: failed)
@@ -78,7 +96,7 @@ class EmbeddingBackfillJob < ApplicationJob
         # OpenAI free tier: 3 RPM (requests per minute)
         # OpenAI tier 1: 500 RPM
         # We'll be conservative
-        sleep(DELAY_BETWEEN_BATCHES) unless batch == scope.last
+        sleep(DELAY_BETWEEN_BATCHES)
       end
 
       # Refresh the index
