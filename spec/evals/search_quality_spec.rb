@@ -43,8 +43,9 @@ RSpec.describe "Search Quality Evaluation", type: :system do
         embedding = Search::EmbeddingService.embed_card(card)
 
         if embedding.present?
-          # Update in OpenSearch
-          indexer.update_card_embedding(card.id, embedding)
+          # Save to PostgreSQL and re-index in OpenSearch
+          card.update_columns(embedding: embedding, embeddings_generated_at: Time.current)
+          indexer.index_card(card.id)
         else
           Rails.logger.warn("Failed to generate embedding for #{card.name}")
         end

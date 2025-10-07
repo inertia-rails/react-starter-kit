@@ -19,14 +19,11 @@ RSpec.describe EmbeddingBackfillJob, type: :job do
     end
   end
 
-  let(:mock_indexer) { instance_double(Search::CardIndexer) }
   let(:mock_embeddings) { Array.new(5) { Array.new(1536) { rand } } }
 
   before do
-    allow(Search::CardIndexer).to receive(:new).and_return(mock_indexer)
-    allow(mock_indexer).to receive(:refresh_index)
     allow(Search::EmbeddingService).to receive(:embed_cards_batch).and_return(mock_embeddings)
-    allow(mock_indexer).to receive(:bulk_update_embeddings).and_return(true)
+    allow(OpenSearchCardUpdateJob).to receive(:perform_later)
   end
 
   describe "#perform" do
@@ -35,6 +32,7 @@ RSpec.describe EmbeddingBackfillJob, type: :job do
 
       cards_without_embeddings.each(&:reload)
       expect(cards_without_embeddings.all? { |card| card.embeddings_generated_at.present? }).to be true
+      expect(cards_without_embeddings.all? { |card| card.embedding.present? }).to be true
     end
 
     it "does not process cards with embeddings" do
@@ -54,10 +52,8 @@ RSpec.describe EmbeddingBackfillJob, type: :job do
       described_class.new.perform(embedding_run.id)
     end
 
-    it "updates OpenSearch with bulk updates" do
-      expect(mock_indexer).to receive(:bulk_update_embeddings).with(
-        an_instance_of(Array)
-      ).and_return(true)
+    it "queues OpenSearch reindex jobs for each card" do
+      expect(OpenSearchCardUpdateJob).to receive(:perform_later).exactly(5).times
 
       described_class.new.perform(embedding_run.id)
     end
@@ -86,23 +82,33 @@ RSpec.describe EmbeddingBackfillJob, type: :job do
       end
     end
 
-    context "when OpenSearch update fails" do
+    context "when database update fails" do
       before do
-        allow(mock_indexer).to receive(:bulk_update_embeddings).and_return(false)
+        # Simulate a database error on a specific card
+        failing_card_id = cards_without_embeddings.first.id
+        allow_any_instance_of(Card).to receive(:update_columns) do |card, *args|
+          if card.id == failing_card_id
+            raise StandardError, "Database error"
+          else
+            card.class.superclass.instance_method(:update_columns).bind(card).call(*args)
+          end
+        end
       end
 
-      it "marks cards as failed" do
+      it "marks failed cards and continues processing others" do
         described_class.new.perform(embedding_run.id)
 
         embedding_run.reload
-        expect(embedding_run.failed_cards).to eq(5)
+        # Should have 1 failed card and 4 successful
+        expect(embedding_run.failed_cards).to eq(1)
+        expect(embedding_run.processed_cards).to eq(4)
       end
 
-      it "does not mark cards with embeddings_generated_at" do
+      it "does not mark failed card with embeddings_generated_at" do
         described_class.new.perform(embedding_run.id)
 
-        cards_without_embeddings.each(&:reload)
-        expect(cards_without_embeddings.all? { |card| card.embeddings_generated_at.nil? }).to be true
+        cards_without_embeddings.first.reload
+        expect(cards_without_embeddings.first.embeddings_generated_at).to be_nil
       end
     end
 

@@ -15,7 +15,6 @@ class EmbeddingBackfillJob < ApplicationJob
     Rails.logger.info("Start ID: #{start_id || 'beginning'}, Limit: #{limit || 'all'}")
 
     begin
-      indexer = Search::CardIndexer.new
       processed = 0
       failed = 0
 
@@ -53,29 +52,28 @@ class EmbeddingBackfillJob < ApplicationJob
               Rails.logger.warn("Batch embedding size mismatch: #{embeddings.size} embeddings for #{batch.size} cards")
             end
 
-            # Prepare updates for OpenSearch
-            updates = batch.zip(embeddings).filter_map do |card, embedding|
+            # Save embeddings to PostgreSQL and queue OpenSearch reindex
+            saved_card_ids = []
+            batch.zip(embeddings).each do |card, embedding|
               if embedding.present?
-                {id: card.id, embedding: embedding}
+                begin
+                  card.update_columns(embedding: embedding, embeddings_generated_at: Time.current)
+                  saved_card_ids << card.id
+                  processed += 1
+                rescue StandardError => e
+                  Rails.logger.error("Failed to save embedding for card #{card.id} (#{card.name}): #{e.message}")
+                  failed += 1
+                end
               else
                 Rails.logger.warn("Missing embedding for card #{card.id} (#{card.name})")
                 failed += 1
-                nil
               end
             end
 
-            # Update embeddings in OpenSearch (partial update)
-            if updates.any?
-              success = indexer.bulk_update_embeddings(updates)
-
-              if success
-                # Mark cards as having embeddings generated
-                card_ids = updates.map { |u| u[:id] }
-                Card.where(id: card_ids).update_all(embeddings_generated_at: Time.current)
-                processed += updates.size
-              else
-                Rails.logger.error("Failed to update embeddings in OpenSearch for batch")
-                failed += updates.size
+            # Queue OpenSearch reindex jobs for successfully saved cards
+            if saved_card_ids.any?
+              saved_card_ids.each do |card_id|
+                OpenSearchCardUpdateJob.perform_later(card_id, "index")
               end
             end
           end
@@ -98,9 +96,6 @@ class EmbeddingBackfillJob < ApplicationJob
         # We'll be conservative
         sleep(DELAY_BETWEEN_BATCHES)
       end
-
-      # Refresh the index
-      indexer.refresh_index
 
       Rails.logger.info("Embedding backfill complete!")
       Rails.logger.info("Total: #{processed} processed, #{failed} failed")

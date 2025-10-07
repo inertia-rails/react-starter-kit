@@ -552,10 +552,10 @@ export default function Dashboard({ stats, recent_users, sync_status, open_searc
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>
-                            {open_search_sync_status.recent_sync.indexed_cards.toLocaleString()}/
-                            {open_search_sync_status.recent_sync.total_cards.toLocaleString()} cards
+                            {(open_search_sync_status.recent_sync.indexed_cards ?? 0).toLocaleString()}/
+                            {(open_search_sync_status.recent_sync.total_cards ?? 0).toLocaleString()} cards
                           </span>
-                          <span>{open_search_sync_status.recent_sync.progress_percentage.toFixed(1)}%</span>
+                          <span>{(open_search_sync_status.recent_sync.progress_percentage ?? 0).toFixed(1)}%</span>
                         </div>
                         <div className="w-full bg-secondary rounded-full h-2">
                           <div
@@ -571,7 +571,7 @@ export default function Dashboard({ stats, recent_users, sync_status, open_searc
                       <div className="text-xs text-muted-foreground space-y-1">
                         <p>Completed: {open_search_sync_status.recent_sync.completed_at}</p>
                         <p>Duration: {open_search_sync_status.recent_sync.duration_formatted}</p>
-                        <p>Cards indexed: {open_search_sync_status.recent_sync.indexed_cards.toLocaleString()}</p>
+                        <p>Cards indexed: {(open_search_sync_status.recent_sync.indexed_cards ?? 0).toLocaleString()}</p>
                       </div>
                     )}
 
@@ -811,10 +811,10 @@ export default function Dashboard({ stats, recent_users, sync_status, open_searc
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>
-                            {embedding_run_status.recent_run.processed_cards.toLocaleString()}/
-                            {embedding_run_status.recent_run.total_cards.toLocaleString()} cards
+                            {(embedding_run_status.recent_run.processed_cards ?? 0).toLocaleString()}/
+                            {(embedding_run_status.recent_run.total_cards ?? 0).toLocaleString()} cards
                           </span>
-                          <span>{embedding_run_status.recent_run.progress_percentage.toFixed(1)}%</span>
+                          <span>{(embedding_run_status.recent_run.progress_percentage ?? 0).toFixed(1)}%</span>
                         </div>
                         <div className="w-full bg-secondary rounded-full h-2">
                           <div
@@ -830,7 +830,7 @@ export default function Dashboard({ stats, recent_users, sync_status, open_searc
                       <div className="text-xs text-muted-foreground space-y-1">
                         <p>Completed: {embedding_run_status.recent_run.completed_at}</p>
                         <p>Duration: {embedding_run_status.recent_run.duration_formatted}</p>
-                        <p>Cards processed: {embedding_run_status.recent_run.processed_cards.toLocaleString()}</p>
+                        <p>Cards processed: {(embedding_run_status.recent_run.processed_cards ?? 0).toLocaleString()}</p>
                       </div>
                     )}
 

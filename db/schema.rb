@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_07_145701) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_07_193616) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -202,6 +202,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_07_145701) do
     t.jsonb "purchase_uris", default: {}, comment: "Purchase links (aggregated from printings)"
     t.jsonb "related_uris", default: {}, comment: "Related URIs (aggregated)"
     t.datetime "embeddings_generated_at"
+    t.decimal "embedding", precision: 8, scale: 7, array: true
     t.index ["card_back_id"], name: "index_cards_on_card_back_id"
     t.index ["cmc"], name: "index_cards_on_cmc"
     t.index ["color_identity"], name: "index_cards_on_color_identity", using: :gin
