@@ -57,7 +57,7 @@ RSpec.describe Search::CardSearch do
     it "adds legality requirement filter" do
       filter_clauses = search_service.send(:build_filter_clauses, {})
 
-      legality_filter = filter_clauses.find { |f| f.dig(:bool, :should, 0, :term, :"legalities.standard") == "legal" }
+      legality_filter = filter_clauses.find { |f| f.dig(:bool, :should, 0, :terms, :"legalities.standard") == ["legal", "restricted", "banned"] }
       expect(legality_filter).to be_present
       expect(legality_filter[:bool][:minimum_should_match]).to eq(1)
     end
@@ -110,7 +110,7 @@ RSpec.describe Search::CardSearch do
         expect(layout_filter).to be_present
 
         # Verify legality filter
-        legality_filter = filter_clauses&.find { |f| f.dig(:bool, :should, 0, :term, :"legalities.standard") == "legal" }
+        legality_filter = filter_clauses&.find { |f| f.dig(:bool, :should, 0, :terms, :"legalities.standard") == ["legal", "restricted", "banned"] }
         expect(legality_filter).to be_present
         expect(legality_filter[:bool][:minimum_should_match]).to eq(1)
 
