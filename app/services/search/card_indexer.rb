@@ -79,6 +79,54 @@ module Search
       false
     end
 
+    def update_card_embedding(card_id, embedding)
+      return false if embedding.blank?
+
+      client.update(
+        index: index_name,
+        id: card_id,
+        body: {
+          doc: {
+            embedding: embedding
+          }
+        }
+      )
+      true
+    rescue OpenSearch::Transport::Transport::Errors::NotFound
+      Rails.logger.warn("OpenSearch: Card #{card_id} not found in index, skipping embedding update")
+      false
+    rescue StandardError => e
+      Rails.logger.error("OpenSearch: Failed to update embedding for card #{card_id}: #{e.message}")
+      false
+    end
+
+    def bulk_update_embeddings(updates)
+      return true if updates.empty?
+
+      body = updates.flat_map do |update|
+        [
+          {update: {_index: index_name, _id: update[:id]}},
+          {doc: {embedding: update[:embedding]}}
+        ]
+      end
+
+      response = client.bulk(body: body)
+
+      if response["errors"]
+        failed_items = response["items"].select { |item| item.dig("update", "error") }
+        Rails.logger.error("OpenSearch: Bulk embedding update had #{failed_items.count} errors")
+        failed_items.each do |item|
+          Rails.logger.error("OpenSearch: Error for card #{item.dig("update", "_id")}: #{item.dig("update", "error", "reason")}")
+        end
+        return false
+      end
+
+      true
+    rescue StandardError => e
+      Rails.logger.error("OpenSearch: Bulk embedding update failed: #{e.message}")
+      false
+    end
+
     def refresh_index
       client.indices.refresh(index: index_name)
     rescue StandardError => e
@@ -479,21 +527,6 @@ module Search
         price_eur: price_data[:eur],
         price_tix: price_data[:tix]
       }
-
-      # Generate embedding for semantic search (optional, gracefully handle failures)
-      # Skip if card already has embeddings generated (unless forced to regenerate)
-      should_generate = ENV["GENERATE_EMBEDDINGS"] == "true" &&
-                        (card.embeddings_generated_at.nil? || ENV["FORCE_REGENERATE_EMBEDDINGS"] == "true")
-
-      if should_generate
-        begin
-          embedding = EmbeddingService.embed_card(card)
-          doc[:embedding] = embedding if embedding.present?
-        rescue StandardError => e
-          Rails.logger.warn("Failed to generate embedding for card #{card.id}: #{e.message}")
-          # Continue without embedding
-        end
-      end
 
       doc
     end
