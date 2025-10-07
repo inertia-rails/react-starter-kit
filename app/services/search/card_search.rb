@@ -2,6 +2,9 @@
 
 module Search
   class CardSearch < Base
+    # Load MTG nickname mappings
+    NICKNAMES = YAML.load_file(Rails.root.join("config/mtg_nicknames.yml")).freeze rescue {}
+
     def autocomplete(query, limit: 10)
       return [] if query.blank?
 
@@ -44,16 +47,19 @@ module Search
     end
 
     def search(query, filters: {}, page: 1, per_page: 20, search_mode: "auto")
+      # Check for nickname match and expand to official card name
+      expanded_query = expand_nickname(query)
+
       # Determine which search mode to use
-      mode = determine_search_mode(query, search_mode)
+      mode = determine_search_mode(expanded_query, search_mode)
 
       search_body = case mode
       when "semantic"
-        build_semantic_search_query(query, filters)
+        build_semantic_search_query(expanded_query, filters)
       when "hybrid"
-        build_hybrid_search_query(query, filters)
+        build_hybrid_search_query(expanded_query, filters)
       else
-        build_search_query(query, filters)
+        build_search_query(expanded_query, filters)
       end
 
       search_body[:from] = (page - 1) * per_page
@@ -65,6 +71,26 @@ module Search
       )
 
       format_search_results(response, page, per_page)
+    rescue OpenSearch::Transport::Transport::Errors::BadRequest => e
+      # Handle k-NN field errors - fall back to keyword search
+      if e.message.include?("not knn_vector type") || e.message.include?("Field 'embedding'")
+        Rails.logger.warn("K-NN search failed (embeddings not available), falling back to keyword search: #{e.message}")
+        # Retry with keyword search
+        search_body = build_search_query(expanded_query, filters)
+        search_body[:from] = (page - 1) * per_page
+        search_body[:size] = per_page
+        response = client.search(index: index_name, body: search_body)
+        format_search_results(response, page, per_page)
+      else
+        Rails.logger.error("OpenSearch search failed: #{e.message}")
+        {
+          results: [],
+          total: 0,
+          page: page,
+          per_page: per_page,
+          total_pages: 0
+        }
+      end
     rescue StandardError => e
       Rails.logger.error("OpenSearch search failed: #{e.message}")
       {
@@ -77,6 +103,24 @@ module Search
     end
 
     private
+
+    # Check if query matches a known MTG nickname and expand to official card name
+    def expand_nickname(query)
+      return query if query.blank?
+
+      # Normalize query for nickname lookup (lowercase, strip whitespace)
+      normalized = query.strip.downcase
+
+      # Check if it matches a nickname
+      if NICKNAMES.key?(normalized)
+        official_name = NICKNAMES[normalized]
+        Rails.logger.debug("Expanded nickname '#{query}' to '#{official_name}'")
+        return official_name
+      end
+
+      # Return original query if no nickname match
+      query
+    end
 
     def build_search_query(query, filters)
       query_clauses = []
@@ -246,54 +290,57 @@ module Search
 
       filter_clauses = build_filter_clauses(filters)
 
-      # Use k-NN with post-filtering and function_score for ranking boosts
-      # Get more candidates (k=200) and then filter to allow semantic relevance to dominate
+      # Use script_score to combine k-NN similarity with popularity/recency boosts
+      # k-NN query returns cosine similarity scores which we enhance with other factors
       search_query = {
         size: 20, # Will be overridden by caller
         query: {
-          function_score: {
+          script_score: {
             query: {
-              knn: {
-                embedding: {
-                  vector: query_embedding,
-                  k: 200 # Increased k to get more candidates before filtering
-                }
-              }
-            },
-            functions: [
-              # EDHREC popularity boost
-              {
-                filter: {exists: {field: "edhrec_rank"}},
-                script_score: {
-                  script: {
-                    source: "Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0)",
-                    lang: "painless"
+              bool: {
+                must: {
+                  knn: {
+                    embedding: {
+                      vector: query_embedding,
+                      k: 200 # Get more candidates for better recall
+                    }
                   }
                 },
-                weight: 1.5
-              },
-              # Recency boost
-              {
-                filter: {range: {released_at: {gte: "now-2y"}}},
-                weight: 1.3
+                filter: filter_clauses
               }
-            ],
-            score_mode: "sum",
-            boost_mode: "multiply"
+            },
+            script: {
+              source: """
+                // Start with k-NN similarity score
+                double baseScore = _score;
+
+                // Popularity boost (EDHREC rank)
+                double popularityBoost = 1.0;
+                if (doc.containsKey('edhrec_rank') && doc['edhrec_rank'].size() > 0) {
+                  popularityBoost = Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0) * 1.5;
+                }
+
+                // Recency boost (cards from last 2 years)
+                double recencyBoost = 1.0;
+                if (doc.containsKey('released_at') && doc['released_at'].size() > 0) {
+                  long releaseMillis = doc['released_at'].value.toInstant().toEpochMilli();
+                  long now = new Date().getTime();
+                  long twoYearsMs = 730L * 24L * 60L * 60L * 1000L;
+                  if (now - releaseMillis < twoYearsMs) {
+                    recencyBoost = 1.3;
+                  }
+                }
+
+                // Combine: base similarity × popularity boost × recency boost
+                return baseScore * popularityBoost * recencyBoost;
+              """,
+              lang: "painless"
+            }
           }
         },
+        sort: ["_score", {"name.keyword": {order: "asc"}}],
         _source: {excludes: ["embedding"]}
       }
-
-      # Apply filters as post-filter if any exist
-      # This preserves semantic ranking while still filtering results
-      if filter_clauses.any?
-        search_query[:post_filter] = {
-          bool: {
-            filter: filter_clauses
-          }
-        }
-      end
 
       search_query
     end
@@ -307,65 +354,67 @@ module Search
 
       filter_clauses = build_filter_clauses(filters)
 
-      # Hybrid approach: Use script_score to combine k-NN similarity with keyword relevance
-      # Then wrap in function_score to add popularity and recency boosts
+      # Hybrid approach: Combine k-NN and keyword search using bool should with scripted boosting
+      # This avoids the cosineSimilarity type casting issue by using separate k-NN and keyword queries
       {
         query: {
-          function_score: {
+          script_score: {
             query: {
-              script_score: {
-                query: {
-                  bool: {
-                    should: [
-                      # Keyword search component
-                      {
-                        multi_match: {
-                          query: query,
-                          fields: ["name^3", "oracle_text", "type_line^2", "card_faces.name^2", "card_faces.oracle_text"],
-                          type: "best_fields",
-                          fuzziness: "AUTO"
-                        }
+              bool: {
+                should: [
+                  # k-NN semantic search component
+                  {
+                    knn: {
+                      embedding: {
+                        vector: query_embedding,
+                        k: 100 # Get top 100 candidates from k-NN
                       }
-                    ],
-                    filter: filter_clauses,
-                    minimum_should_match: 0 # Allow either keyword or semantic to match
+                    }
+                  },
+                  # Keyword search component
+                  {
+                    multi_match: {
+                      query: query,
+                      fields: ["name^3", "oracle_text", "type_line^2", "card_faces.name^2", "card_faces.oracle_text"],
+                      type: "best_fields",
+                      fuzziness: "AUTO"
+                    }
                   }
-                },
-                script: {
-                  source: """
-                    double keywordScore = Math.max(_score, 0.1);
-                    double vectorScore = doc['embedding'].size() == 0 ? 0.0 : cosineSimilarity(params.query_vector, doc['embedding']) + 1.0;
-                    return (vectorScore * 3.0) + (keywordScore * 1.0);
-                  """,
-                  params: {
-                    query_vector: query_embedding
-                  }
-                }
+                ],
+                filter: filter_clauses,
+                minimum_should_match: 1 # Need at least one match (k-NN or keyword)
               }
             },
-            functions: [
-              # EDHREC popularity boost (lower rank = more popular)
-              # Boost popular cards but don't penalize cards without ranks
-              {
-                filter: {exists: {field: "edhrec_rank"}},
-                script_score: {
-                  script: {
-                    source: "Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0)",
-                    lang: "painless"
+            script: {
+              source: """
+                // Base score combines k-NN similarity and keyword relevance
+                double baseScore = _score;
+
+                // Popularity boost (EDHREC rank)
+                double popularityBoost = 1.0;
+                if (doc.containsKey('edhrec_rank') && doc['edhrec_rank'].size() > 0) {
+                  popularityBoost = Math.log10(10000.0 / Math.max(doc['edhrec_rank'].value, 1.0) + 1.0) * 1.5;
+                }
+
+                // Recency boost (cards from last 2 years)
+                double recencyBoost = 1.0;
+                if (doc.containsKey('released_at') && doc['released_at'].size() > 0) {
+                  long releaseMillis = doc['released_at'].value.toInstant().toEpochMilli();
+                  long now = new Date().getTime();
+                  long twoYearsMs = 730L * 24L * 60L * 60L * 1000L;
+                  if (now - releaseMillis < twoYearsMs) {
+                    recencyBoost = 1.3;
                   }
-                },
-                weight: 1.5
-              },
-              # Recency boost for cards released in the last 2 years
-              {
-                filter: {range: {released_at: {gte: "now-2y"}}},
-                weight: 1.3
-              }
-            ],
-            score_mode: "sum",
-            boost_mode: "multiply"
+                }
+
+                // Apply boosts to the combined score
+                return baseScore * popularityBoost * recencyBoost;
+              """,
+              lang: "painless"
+            }
           }
         },
+        sort: ["_score", {"name.keyword": {order: "asc"}}],
         _source: {excludes: ["embedding"]}
       }
     end
@@ -395,28 +444,29 @@ module Search
         }
       end
 
-      # Require cards to be legal in at least one format
+      # Require cards to be playable in at least one format
       # This excludes unplayable cards like art cards that have no legality
-      # Check all known Magic formats for "legal" status
+      # Accept "legal", "restricted", or "banned" status (all indicate real, playable cards)
+      # Cards like Black Lotus are "restricted" in Vintage, "banned" in Legacy but should still be searchable
       filter_clauses << {
         bool: {
           should: [
-            {term: {"legalities.standard": "legal"}},
-            {term: {"legalities.pioneer": "legal"}},
-            {term: {"legalities.modern": "legal"}},
-            {term: {"legalities.legacy": "legal"}},
-            {term: {"legalities.vintage": "legal"}},
-            {term: {"legalities.commander": "legal"}},
-            {term: {"legalities.oathbreaker": "legal"}},
-            {term: {"legalities.brawl": "legal"}},
-            {term: {"legalities.historic": "legal"}},
-            {term: {"legalities.gladiator": "legal"}},
-            {term: {"legalities.duel": "legal"}},
-            {term: {"legalities.penny": "legal"}},
-            {term: {"legalities.timeless": "legal"}},
-            {term: {"legalities.alchemy": "legal"}},
-            {term: {"legalities.pauper": "legal"}},
-            {term: {"legalities.paupercommander": "legal"}}
+            {terms: {"legalities.standard": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.pioneer": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.modern": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.legacy": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.vintage": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.commander": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.oathbreaker": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.brawl": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.historic": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.gladiator": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.duel": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.penny": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.timeless": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.alchemy": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.pauper": ["legal", "restricted", "banned"]}},
+            {terms: {"legalities.paupercommander": ["legal", "restricted", "banned"]}}
           ],
           minimum_should_match: 1
         }

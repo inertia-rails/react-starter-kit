@@ -1,0 +1,31 @@
+# MTG Community Nicknames
+# Maps common slang terms and nicknames to official card names
+# Format: nickname: Official Card Name
+
+# Famous Nicknames
+bob: Dark Confidant
+sad robot: Solemn Simulacrum
+gary: Gray Merchant of Asphodel
+snap: Snapcaster Mage
+goyf: Tarmogoyf
+mom: Mother of Runes
+steve: Sakura-Tribe Elder
+
+# Shortened Names
+fow: Force of Will
+fon: Force of Negation
+top: Sensei's Divining Top
+bob: Dark Confidant
+jace: Jace, the Mind Sculptor
+
+# Effect Nicknames
+bolt: Lightning Bolt
+path: Path to Exile
+swords: Swords to Plowshares
+counterspell: Counterspell
+wrath: Wrath of God
+
+# Creature Type Slang (handled separately in search logic)
+# dork: <mana-producing creature>
+# wrath: <board wipe effect>
+# removal: <creature removal spell>
