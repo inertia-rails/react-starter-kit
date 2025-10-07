@@ -45,10 +45,10 @@ class Admin::DashboardController < InertiaController
           admin: user.admin
         }
       },
-      sync_status: fetch_sync_status,
-      open_search_sync_status: open_search_sync_status_data,
-      search_eval_status: search_eval_status_data,
-      embedding_run_status: embedding_run_status_data
+      sync_status: Rails.cache.fetch("admin_dashboard_sync_status", expires_in: 2.minutes) { fetch_sync_status },
+      open_search_sync_status: Rails.cache.fetch("admin_dashboard_opensearch_status", expires_in: 2.minutes) { open_search_sync_status_data },
+      search_eval_status: Rails.cache.fetch("admin_dashboard_search_eval_status", expires_in: 2.minutes) { search_eval_status_data },
+      embedding_run_status: Rails.cache.fetch("admin_dashboard_embedding_status", expires_in: 2.minutes) { embedding_run_status_data }
     }
   end
 
@@ -107,7 +107,9 @@ class Admin::DashboardController < InertiaController
 
   def open_search_sync_status_data
     recent_sync = OpenSearchSync.recent.first
-    index_stats = Search::CardIndexer.new.index_stats
+    index_stats = Rails.cache.fetch("opensearch_index_stats", expires_in: 5.minutes) do
+      Search::CardIndexer.new.index_stats
+    end
 
     {
       recent_sync: recent_sync ? {
@@ -156,7 +158,9 @@ class Admin::DashboardController < InertiaController
 
     # Calculate what percentage of cards have embeddings
     total_cards = @cards_count || approximate_count(Card)
-    cards_with_embeddings = Card.where.not(embeddings_generated_at: nil).count
+    cards_with_embeddings = Rails.cache.fetch("cards_with_embeddings_count", expires_in: 5.minutes) do
+      Card.where.not(embeddings_generated_at: nil).count
+    end
     embedding_coverage_percentage = total_cards > 0 ? (cards_with_embeddings.to_f / total_cards * 100).round(1) : 0
 
     {
