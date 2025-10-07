@@ -34,21 +34,6 @@ class OpenSearchReindexJob < ApplicationJob
 
         if success
           sync.increment!(:indexed_cards, batch.size)
-
-          # If embeddings were generated, mark cards with embeddings_generated_at
-          if ENV["GENERATE_EMBEDDINGS"] == "true"
-            # Only update cards that don't already have embeddings_generated_at
-            # (unless FORCE_REGENERATE_EMBEDDINGS is true)
-            cards_to_update = if ENV["FORCE_REGENERATE_EMBEDDINGS"] == "true"
-              batch
-            else
-              batch.select { |card| card.embeddings_generated_at.nil? }
-            end
-
-            if cards_to_update.any?
-              Card.where(id: cards_to_update.map(&:id)).update_all(embeddings_generated_at: Time.current)
-            end
-          end
         else
           sync.increment!(:failed_cards, batch.size)
         end
