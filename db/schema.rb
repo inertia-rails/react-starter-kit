@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_06_022004) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_07_145701) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -206,6 +206,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_06_022004) do
     t.index ["cmc"], name: "index_cards_on_cmc"
     t.index ["color_identity"], name: "index_cards_on_color_identity", using: :gin
     t.index ["colors"], name: "index_cards_on_colors", using: :gin
+    t.index ["embeddings_generated_at"], name: "index_cards_on_embeddings_generated_at"
     t.index ["keywords"], name: "index_cards_on_keywords", using: :gin
     t.index ["name"], name: "index_cards_on_name"
     t.index ["oracle_id"], name: "index_cards_on_oracle_id", unique: true
