@@ -8,7 +8,7 @@ export default function AppLogo() {
       </div>
       <div className="ml-1 grid flex-1 text-left text-sm">
         <span className="mb-0.5 truncate leading-tight font-semibold">
-          React Starter Kit
+          {import.meta.env.VITE_APP_NAME ?? "React Starter Kit"}
         </span>
       </div>
     </>
