@@ -1,11 +1,11 @@
 import { Form, Head } from "@inertiajs/react"
-import { LoaderCircle } from "lucide-react"
 
 import InputError from "@/components/input-error"
 import TextLink from "@/components/text-link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
 import { newIdentityPasswordResetPath, signInPath, signUpPath } from "@/routes"
 
@@ -69,9 +69,7 @@ export default function Login() {
                 tabIndex={4}
                 disabled={processing}
               >
-                {processing && (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                )}
+                {processing && <Spinner />}
                 Log in
               </Button>
             </div>

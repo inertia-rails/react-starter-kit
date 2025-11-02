@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@plugin 'tailwindcss-animate';
+@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 @plugin "@tailwindcss/forms";
 
@@ -141,6 +141,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply antialiased bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 }

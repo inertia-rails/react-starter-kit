@@ -33,7 +33,7 @@ import { UserMenuContent } from "@/components/user-menu-content"
 import { useInitials } from "@/hooks/use-initials"
 import { cn } from "@/lib/utils"
 import { dashboardPath } from "@/routes"
-import type { BreadcrumbItem, NavItem, SharedData } from "@/types"
+import type { BreadcrumbItem, NavItem } from "@/types"
 
 import AppLogo from "./app-logo"
 import AppLogoIcon from "./app-logo-icon"
@@ -67,7 +67,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
-  const page = usePage<SharedData>()
+  const page = usePage()
   const { auth } = page.props
   const getInitials = useInitials()
   return (

@@ -2,10 +2,9 @@ import { Head, Link, usePage } from "@inertiajs/react"
 
 import AppLogoIcon from "@/components/app-logo-icon"
 import { dashboardPath, signInPath } from "@/routes"
-import type { SharedData } from "@/types"
 
 export default function Welcome() {
-  const page = usePage<SharedData>()
+  const page = usePage()
   const { auth } = page.props
 
   return (

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
 import { sessionPath, settingsSessionsPath } from "@/routes"
-import type { BreadcrumbItem, Session, SharedData } from "@/types"
+import type { BreadcrumbItem, Session } from "@/types"
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -20,7 +20,7 @@ interface SessionsProps {
 }
 
 export default function Sessions({ sessions }: SessionsProps) {
-  const { auth } = usePage<SharedData>().props
+  const { auth } = usePage().props
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>

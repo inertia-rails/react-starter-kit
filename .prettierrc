@@ -5,5 +5,9 @@
   "trailingComma": "all",
   "plugins": [
     "prettier-plugin-tailwindcss"
+  ],
+  "tailwindFunctions": [
+    "clsx",
+    "cn"
   ]
 }

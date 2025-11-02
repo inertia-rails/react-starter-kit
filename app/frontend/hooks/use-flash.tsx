@@ -7,7 +7,7 @@ import type { Flash } from "@/types"
 const emptyFlash = {}
 
 export const useFlash = () => {
-  const { flash } = usePage<{ flash: Flash }>().props
+  const { flash } = usePage().props
   const [currentFlash, setCurrentFlash] = useState<Flash>(emptyFlash)
 
   useEffect(() => {

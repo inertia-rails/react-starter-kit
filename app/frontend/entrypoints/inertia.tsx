@@ -1,5 +1,5 @@
 import { createInertiaApp } from "@inertiajs/react"
-import { type ReactNode, createElement } from "react"
+import { type ReactNode, StrictMode, createElement } from "react"
 import { createRoot } from "react-dom/client"
 
 import { initializeTheme } from "@/hooks/use-appearance"
@@ -40,10 +40,25 @@ void createInertiaApp({
   setup({ el, App, props }) {
     // Uncomment the following to enable SSR hydration:
     // if (el.hasChildNodes()) {
-    //   hydrateRoot(el, createElement(App, props))
+    //   hydrateRoot(el, <App {...props} />)
     //   return
     // }
-    createRoot(el).render(createElement(App, props))
+    createRoot(el).render(
+      <StrictMode>
+        <App {...props} />
+      </StrictMode>,
+    )
+  },
+
+  defaults: {
+    future: {
+      useDataInertiaHeadAttribute: true,
+      useDialogForErrorModal: true,
+      preserveEqualProps: true,
+    },
+    visitOptions: () => {
+      return { queryStringArrayFormat: "brackets" }
+    },
   },
 
   progress: {

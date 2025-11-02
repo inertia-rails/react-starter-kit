@@ -1,7 +1,7 @@
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'vite'
-import RubyPlugin from 'vite-plugin-ruby'
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vite"
+import RubyPlugin from "vite-plugin-ruby"
 
 export default defineConfig({
   ssr: {
@@ -9,7 +9,11 @@ export default defineConfig({
     noExternal: true,
   },
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: ["babel-plugin-react-compiler"],
+      },
+    }),
     tailwindcss(),
     RubyPlugin(),
   ],

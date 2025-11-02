@@ -1,7 +1,8 @@
 import pluginJs from "@eslint/js"
-import prettierConfig from "eslint-config-prettier"
+import prettierConfig from "eslint-config-prettier/flat"
 import importPlugin from "eslint-plugin-import"
 import pluginReact from "eslint-plugin-react"
+import reactHooks from "eslint-plugin-react-hooks"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 
@@ -24,6 +25,7 @@ export default [
     },
   },
   pluginJs.configs.recommended,
+  reactHooks.configs.flat.recommended,
   ...tseslint.configs.stylisticTypeChecked,
   ...tseslint.configs.recommendedTypeChecked,
   pluginReact.configs.flat.recommended,
@@ -44,7 +46,7 @@ export default [
             },
           ],
           "newlines-between": "always",
-          "named": true,
+          named: true,
           alphabetize: { order: "asc" },
         },
       ],

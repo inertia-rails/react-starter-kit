@@ -14,6 +14,7 @@ const applyTheme = (appearance: Appearance) => {
     appearance === "dark" || (appearance === "system" && prefersDark())
 
   document.documentElement.classList.toggle("dark", isDark)
+  document.documentElement.style.colorScheme = isDark ? "dark" : "light"
 }
 
 const mediaQuery = () => {
@@ -39,7 +40,11 @@ export function initializeTheme() {
 }
 
 export function useAppearance() {
-  const [appearance, setAppearance] = useState<Appearance>("system")
+  const [appearance, setAppearance] = useState<Appearance>(() => {
+    if (typeof window === "undefined") return "system"
+    const saved = localStorage.getItem("appearance") as Appearance | null
+    return saved ?? "system"
+  })
 
   const updateAppearance = useCallback((mode: Appearance) => {
     setAppearance(mode)
@@ -52,14 +57,11 @@ export function useAppearance() {
   }, [])
 
   useEffect(() => {
-    const savedAppearance = localStorage.getItem(
-      "appearance",
-    ) as Appearance | null
-    updateAppearance(savedAppearance ?? "system")
+    applyTheme(appearance)
 
     return () =>
       mediaQuery()?.removeEventListener("change", handleSystemThemeChange)
-  }, [updateAppearance])
+  }, [appearance])
 
   return { appearance, updateAppearance } as const
 }

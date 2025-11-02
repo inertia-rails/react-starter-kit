@@ -25,7 +25,6 @@ export interface Flash {
 export interface SharedData {
   auth: Auth
   flash: Flash
-  [key: string]: unknown
 }
 
 export interface User {
