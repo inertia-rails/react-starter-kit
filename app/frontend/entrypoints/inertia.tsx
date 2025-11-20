@@ -1,14 +1,10 @@
+import type { ResolvedComponent } from "@inertiajs/react"
 import { createInertiaApp } from "@inertiajs/react"
-import { type ReactNode, StrictMode, createElement } from "react"
+import { type ReactNode, StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { initializeTheme } from "@/hooks/use-appearance"
 import PersistentLayout from "@/layouts/persistent-layout"
-
-// Temporary type definition, until @inertiajs/react provides one
-interface ResolvedComponent {
-  default: ReactNode & { layout?: (page: ReactNode) => ReactNode }
-}
 
 const appName = import.meta.env.VITE_APP_NAME ?? "React Starter Kit"
 
@@ -19,9 +15,12 @@ void createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),
 
   resolve: (name) => {
-    const pages = import.meta.glob<ResolvedComponent>("../pages/**/*.tsx", {
-      eager: true,
-    })
+    const pages = import.meta.glob<{ default: ResolvedComponent }>(
+      "../pages/**/*.tsx",
+      {
+        eager: true,
+      },
+    )
     const page = pages[`../pages/${name}.tsx`]
     if (!page) {
       console.error(`Missing Inertia page component: '${name}.tsx'`)
@@ -31,8 +30,9 @@ void createInertiaApp({
     // and use the following line.
     // see https://inertia-rails.dev/guide/pages#default-layouts
     //
-    page.default.layout ??= (page) =>
-      createElement(PersistentLayout, null, page)
+    page.default.layout ??= (page: ReactNode) => (
+      <PersistentLayout>{page}</PersistentLayout>
+    )
 
     return page
   },
@@ -51,13 +51,13 @@ void createInertiaApp({
   },
 
   defaults: {
+    form: {
+      forceIndicesArrayFormatInFormData: true,
+    },
     future: {
       useDataInertiaHeadAttribute: true,
       useDialogForErrorModal: true,
       preserveEqualProps: true,
-    },
-    visitOptions: () => {
-      return { queryStringArrayFormat: "brackets" }
     },
   },
 

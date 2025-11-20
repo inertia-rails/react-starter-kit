@@ -43,7 +43,8 @@ RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz
     rm -rf /tmp/node-build-master
 
 # Install application gems
-COPY Gemfile Gemfile.lock vendor ./
+COPY vendor/* ./vendor/
+COPY Gemfile Gemfile.lock ./
 
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \

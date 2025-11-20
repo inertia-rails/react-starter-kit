@@ -34,6 +34,8 @@ export default [
   {
     ...importPlugin.flatConfigs.recommended,
     ...importPlugin.flatConfigs.typescript,
+    ...importPlugin.flatConfigs.react,
+    settings: { "import/resolver": { typescript: {} } },
     rules: {
       "import/order": [
         "error",
@@ -51,7 +53,16 @@ export default [
         },
       ],
       "import/first": "error",
-      "import/extensions": ["error", "never"],
+      "import/extensions": [
+        "error",
+        "always",
+        {
+          js: "never",
+          jsx: "never",
+          ts: "never",
+          tsx: "never",
+        },
+      ],
       "@typescript-eslint/consistent-type-imports": "error",
     },
   },

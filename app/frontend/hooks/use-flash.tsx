@@ -1,29 +1,17 @@
-import { router, usePage } from "@inertiajs/react"
-import { useEffect, useState } from "react"
+import { router } from "@inertiajs/react"
 import { toast } from "sonner"
 
 import type { Flash } from "@/types"
 
-const emptyFlash = {}
-
 export const useFlash = () => {
-  const { flash } = usePage().props
-  const [currentFlash, setCurrentFlash] = useState<Flash>(emptyFlash)
-
-  useEffect(() => {
-    setCurrentFlash(flash)
-  }, [flash])
-
-  router.on("start", () => {
-    setCurrentFlash(emptyFlash)
+  router.on("beforeUpdate", (event) => {
+    const flash = event.detail.page.props.flash as Flash
+    if (flash.alert) {
+      toast.error(flash.alert)
+    }
+    if (flash.notice) {
+      toast(flash.notice)
+    }
+    event.detail.page.props.flash = {}
   })
-
-  useEffect(() => {
-    if (currentFlash.alert) {
-      toast.error(currentFlash.alert)
-    }
-    if (currentFlash.notice) {
-      toast(currentFlash.notice)
-    }
-  }, [currentFlash])
 }
