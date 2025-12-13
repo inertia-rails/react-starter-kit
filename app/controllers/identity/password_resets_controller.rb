@@ -9,7 +9,8 @@ class Identity::PasswordResetsController < InertiaController
   end
 
   def edit
-    render inertia: {email: @user.email, sid: params[:sid]}
+    @email = @user.email
+    @sid = params[:sid]
   end
 
   def create

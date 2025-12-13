@@ -7,13 +7,12 @@ import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
 import { identityPasswordResetPath } from "@/routes"
+import type { IdentityPasswordResetsEdit } from "@/types"
 
-interface ResetPasswordProps {
-  sid: string
-  email: string
-}
-
-export default function ResetPassword({ sid, email }: ResetPasswordProps) {
+export default function ResetPassword({
+  sid,
+  email,
+}: IdentityPasswordResetsEdit) {
   return (
     <AuthLayout
       title="Reset password"

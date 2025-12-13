@@ -3,3 +3,4 @@ build
 coverage
 
 app/frontend/routes
+app/frontend/types/serializers
