@@ -2,10 +2,14 @@ import { Transition } from "@headlessui/react"
 import { Form, Head } from "@inertiajs/react"
 
 import HeadingSmall from "@/components/heading-small"
-import InputError from "@/components/input-error"
 import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
 import { settingsPasswordPath } from "@/routes"
@@ -42,52 +46,63 @@ export default function Password() {
           >
             {({ errors, processing, recentlySuccessful }) => (
               <>
-                <div className="grid gap-2">
-                  <Label htmlFor="password_challenge">Current password</Label>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="password_challenge">
+                      Current password
+                    </FieldLabel>
 
-                  <Input
-                    id="password_challenge"
-                    name="password_challenge"
-                    type="password"
-                    className="mt-1 block w-full"
-                    autoComplete="current-password"
-                    placeholder="Current password"
-                  />
+                    <Input
+                      id="password_challenge"
+                      name="password_challenge"
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="Current password"
+                    />
 
-                  <InputError messages={errors.password_challenge} />
-                </div>
+                    <FieldError
+                      errors={errors.password_challenge?.map((message) => ({
+                        message,
+                      }))}
+                    />
+                  </Field>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="password">New password</Label>
+                  <Field>
+                    <FieldLabel htmlFor="password">New password</FieldLabel>
 
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    className="mt-1 block w-full"
-                    autoComplete="new-password"
-                    placeholder="New password"
-                  />
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="New password"
+                    />
 
-                  <InputError messages={errors.password} />
-                </div>
+                    <FieldError
+                      errors={errors.password?.map((message) => ({ message }))}
+                    />
+                  </Field>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="password_confirmation">
-                    Confirm password
-                  </Label>
+                  <Field>
+                    <FieldLabel htmlFor="password_confirmation">
+                      Confirm password
+                    </FieldLabel>
 
-                  <Input
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    type="password"
-                    className="mt-1 block w-full"
-                    autoComplete="new-password"
-                    placeholder="Confirm password"
-                  />
+                    <Input
+                      id="password_confirmation"
+                      name="password_confirmation"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="Confirm password"
+                    />
 
-                  <InputError messages={errors.password_confirmation} />
-                </div>
+                    <FieldError
+                      errors={errors.password_confirmation?.map((message) => ({
+                        message,
+                      }))}
+                    />
+                  </Field>
+                </FieldGroup>
 
                 <div className="flex items-center gap-4">
                   <Button disabled={processing}>Save password</Button>
