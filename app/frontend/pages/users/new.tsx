@@ -1,10 +1,14 @@
 import { Form, Head } from "@inertiajs/react"
 
-import InputError from "@/components/input-error"
 import TextLink from "@/components/text-link"
 import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
 import { signInPath, signUpPath } from "@/routes"
@@ -25,9 +29,9 @@ export default function Register() {
       >
         {({ processing, errors }) => (
           <>
-            <div className="grid gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="name">Name</FieldLabel>
                 <Input
                   id="name"
                   type="text"
@@ -39,11 +43,13 @@ export default function Register() {
                   disabled={processing}
                   placeholder="Full name"
                 />
-                <InputError messages={errors.name} className="mt-2" />
-              </div>
+                <FieldError
+                  errors={errors.name?.map((message) => ({ message }))}
+                />
+              </Field>
 
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+              <Field>
+                <FieldLabel htmlFor="email">Email address</FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -53,11 +59,13 @@ export default function Register() {
                   autoComplete="email"
                   placeholder="email@example.com"
                 />
-                <InputError messages={errors.email} />
-              </div>
+                <FieldError
+                  errors={errors.email?.map((message) => ({ message }))}
+                />
+              </Field>
 
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <Input
                   id="password"
                   type="password"
@@ -67,11 +75,15 @@ export default function Register() {
                   autoComplete="new-password"
                   placeholder="Password"
                 />
-                <InputError messages={errors.password} />
-              </div>
+                <FieldError
+                  errors={errors.password?.map((message) => ({ message }))}
+                />
+              </Field>
 
-              <div className="grid gap-2">
-                <Label htmlFor="password_confirmation">Confirm password</Label>
+              <Field>
+                <FieldLabel htmlFor="password_confirmation">
+                  Confirm password
+                </FieldLabel>
                 <Input
                   id="password_confirmation"
                   type="password"
@@ -81,14 +93,18 @@ export default function Register() {
                   autoComplete="new-password"
                   placeholder="Confirm password"
                 />
-                <InputError messages={errors.password_confirmation} />
-              </div>
+                <FieldError
+                  errors={errors.password_confirmation?.map((message) => ({
+                    message,
+                  }))}
+                />
+              </Field>
 
               <Button type="submit" className="mt-2 w-full" tabIndex={5}>
                 {processing && <Spinner />}
                 Create account
               </Button>
-            </div>
+            </FieldGroup>
 
             <div className="text-muted-foreground text-center text-sm">
               Already have an account?{" "}

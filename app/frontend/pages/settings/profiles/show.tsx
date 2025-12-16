@@ -3,10 +3,9 @@ import { Form, Head, usePage } from "@inertiajs/react"
 
 import DeleteUser from "@/components/delete-user"
 import HeadingSmall from "@/components/heading-small"
-import InputError from "@/components/input-error"
 import { Button } from "@/components/ui/button"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
 import { settingsProfilePath } from "@/routes"
@@ -43,21 +42,22 @@ export default function Profile() {
           >
             {({ errors, processing, recentlySuccessful }) => (
               <>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
+                <Field>
+                  <FieldLabel htmlFor="name">Name</FieldLabel>
 
                   <Input
                     id="name"
                     name="name"
-                    className="mt-1 block w-full"
                     defaultValue={auth.user.name}
                     required
                     autoComplete="name"
                     placeholder="Full name"
                   />
 
-                  <InputError className="mt-2" messages={errors.name} />
-                </div>
+                  <FieldError
+                    errors={errors.name?.map((message) => ({ message }))}
+                  />
+                </Field>
 
                 <div className="flex items-center gap-4">
                   <Button disabled={processing}>Save</Button>

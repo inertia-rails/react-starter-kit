@@ -1,10 +1,14 @@
 import { Form, Head } from "@inertiajs/react"
 
-import InputError from "@/components/input-error"
 import TextLink from "@/components/text-link"
 import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
 import { newIdentityPasswordResetPath, signInPath, signUpPath } from "@/routes"
@@ -24,9 +28,9 @@ export default function Login() {
       >
         {({ processing, errors }) => (
           <>
-            <div className="grid gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">Email address</FieldLabel>
                 <Input
                   id="email"
                   name="email"
@@ -37,12 +41,14 @@ export default function Login() {
                   autoComplete="email"
                   placeholder="email@example.com"
                 />
-                <InputError messages={errors.email} />
-              </div>
+                <FieldError
+                  errors={errors.email?.map((message) => ({ message }))}
+                />
+              </Field>
 
-              <div className="grid gap-2">
+              <Field>
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
                   <TextLink
                     href={newIdentityPasswordResetPath()}
                     className="ml-auto text-sm"
@@ -60,8 +66,10 @@ export default function Login() {
                   autoComplete="current-password"
                   placeholder="Password"
                 />
-                <InputError messages={errors.password} />
-              </div>
+                <FieldError
+                  errors={errors.password?.map((message) => ({ message }))}
+                />
+              </Field>
 
               <Button
                 type="submit"
@@ -72,7 +80,7 @@ export default function Login() {
                 {processing && <Spinner />}
                 Log in
               </Button>
-            </div>
+            </FieldGroup>
 
             <div className="text-muted-foreground text-center text-sm">
               Don&apos;t have an account?{" "}
