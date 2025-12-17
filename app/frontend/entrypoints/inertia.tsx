@@ -1,6 +1,6 @@
 import type { ResolvedComponent } from "@inertiajs/react"
 import { createInertiaApp } from "@inertiajs/react"
-import { type ReactNode, StrictMode } from "react"
+import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { initializeTheme } from "@/hooks/use-appearance"
@@ -30,9 +30,7 @@ void createInertiaApp({
     // and use the following line.
     // see https://inertia-rails.dev/guide/pages#default-layouts
     //
-    page.default.layout ??= (page: ReactNode) => (
-      <PersistentLayout>{page}</PersistentLayout>
-    )
+    page.default.layout ??= [PersistentLayout]
 
     return page
   },
@@ -52,9 +50,10 @@ void createInertiaApp({
 
   defaults: {
     form: {
-      forceIndicesArrayFormatInFormData: true,
+      forceIndicesArrayFormatInFormData: false,
     },
     future: {
+      useScriptElementForInitialPage: true,
       useDataInertiaHeadAttribute: true,
       useDialogForErrorModal: true,
       preserveEqualProps: true,
