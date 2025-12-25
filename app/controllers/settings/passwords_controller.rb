@@ -10,7 +10,7 @@ class Settings::PasswordsController < InertiaController
     if @user.update(user_params)
       redirect_to settings_password_path, notice: "Your password has been changed"
     else
-      redirect_to settings_password_path, inertia: inertia_errors(@user)
+      redirect_to settings_password_path, inertia: {errors: @user.errors}
     end
   end
 

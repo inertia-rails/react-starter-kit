@@ -10,7 +10,7 @@ class Settings::EmailsController < InertiaController
     if @user.update(user_params)
       redirect_to_success
     else
-      redirect_to settings_email_path, inertia: inertia_errors(@user)
+      redirect_to settings_email_path, inertia: {errors: @user.errors}
     end
   end
 

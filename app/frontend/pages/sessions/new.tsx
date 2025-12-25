@@ -37,7 +37,7 @@ export default function Login() {
                   autoComplete="email"
                   placeholder="email@example.com"
                 />
-                <InputError message={errors.email} />
+                <InputError messages={errors.email} />
               </div>
 
               <div className="grid gap-2">
@@ -60,7 +60,7 @@ export default function Login() {
                   autoComplete="current-password"
                   placeholder="Password"
                 />
-                <InputError message={errors.password} />
+                <InputError messages={errors.password} />
               </div>
 
               <Button

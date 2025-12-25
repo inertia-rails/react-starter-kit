@@ -73,7 +73,7 @@ export default function DeleteUser() {
                       autoComplete="current-password"
                     />
 
-                    <InputError message={errors.password_challenge} />
+                    <InputError messages={errors.password_challenge} />
                   </div>
 
                   <DialogFooter>

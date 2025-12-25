@@ -31,7 +31,7 @@ export default function ForgotPassword() {
                   autoFocus
                   placeholder="email@example.com"
                 />
-                <InputError message={errors.email} />
+                <InputError messages={errors.email} />
               </div>
 
               <div className="my-6 flex items-center justify-start">

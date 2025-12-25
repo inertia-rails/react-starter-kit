@@ -58,7 +58,7 @@ export default function Email() {
                     placeholder="Email address"
                   />
 
-                  <InputError className="mt-2" message={errors.email} />
+                  <InputError className="mt-2" messages={errors.email} />
                 </div>
 
                 {!auth.user.verified && (
@@ -89,7 +89,7 @@ export default function Email() {
                     placeholder="Current password"
                   />
 
-                  <InputError message={errors.password_challenge} />
+                  <InputError messages={errors.password_challenge} />
                 </div>
 
                 <div className="flex items-center gap-4">

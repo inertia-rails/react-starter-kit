@@ -56,7 +56,7 @@ export default function Profile() {
                     placeholder="Full name"
                   />
 
-                  <InputError className="mt-2" message={errors.name} />
+                  <InputError className="mt-2" messages={errors.name} />
                 </div>
 
                 <div className="flex items-center gap-4">

@@ -30,7 +30,7 @@ RSpec.describe "Settings::Passwords", type: :request do
         patch settings_password_url, params: {password_challenge: "SecretWrong1*3", password: "Secret6*4*2*", password_confirmation: "Secret6*4*2*"}
         expect(response).to redirect_to(settings_password_path)
         expect(session[:inertia_errors]).to eq(
-          password_challenge: "Password challenge is invalid",
+          password_challenge: ["is invalid"],
         )
       end
     end

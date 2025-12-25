@@ -54,7 +54,7 @@ export default function Password() {
                     placeholder="Current password"
                   />
 
-                  <InputError message={errors.password_challenge} />
+                  <InputError messages={errors.password_challenge} />
                 </div>
 
                 <div className="grid gap-2">
@@ -69,7 +69,7 @@ export default function Password() {
                     placeholder="New password"
                   />
 
-                  <InputError message={errors.password} />
+                  <InputError messages={errors.password} />
                 </div>
 
                 <div className="grid gap-2">
@@ -86,7 +86,7 @@ export default function Password() {
                     placeholder="Confirm password"
                   />
 
-                  <InputError message={errors.password_confirmation} />
+                  <InputError messages={errors.password_confirmation} />
                 </div>
 
                 <div className="flex items-center gap-4">

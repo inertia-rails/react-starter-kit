@@ -39,7 +39,7 @@ export default function Register() {
                   disabled={processing}
                   placeholder="Full name"
                 />
-                <InputError message={errors.name} className="mt-2" />
+                <InputError messages={errors.name} className="mt-2" />
               </div>
 
               <div className="grid gap-2">
@@ -53,7 +53,7 @@ export default function Register() {
                   autoComplete="email"
                   placeholder="email@example.com"
                 />
-                <InputError message={errors.email} />
+                <InputError messages={errors.email} />
               </div>
 
               <div className="grid gap-2">
@@ -67,7 +67,7 @@ export default function Register() {
                   autoComplete="new-password"
                   placeholder="Password"
                 />
-                <InputError message={errors.password} />
+                <InputError messages={errors.password} />
               </div>
 
               <div className="grid gap-2">
@@ -81,7 +81,7 @@ export default function Register() {
                   autoComplete="new-password"
                   placeholder="Confirm password"
                 />
-                <InputError message={errors.password_confirmation} />
+                <InputError messages={errors.password_confirmation} />
               </div>
 
               <Button type="submit" className="mt-2 w-full" tabIndex={5}>

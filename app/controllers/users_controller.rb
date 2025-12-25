@@ -18,7 +18,7 @@ class UsersController < InertiaController
       send_email_verification
       redirect_to dashboard_path, notice: "Welcome! You have signed up successfully"
     else
-      redirect_to sign_up_path, inertia: inertia_errors(@user)
+      redirect_to sign_up_path, inertia: {errors: @user.errors}
     end
   end
 

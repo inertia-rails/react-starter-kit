@@ -10,7 +10,7 @@ class Settings::ProfilesController < InertiaController
     if @user.update(user_params)
       redirect_to settings_profile_path, notice: "Your profile has been updated"
     else
-      redirect_to settings_profile_path, inertia: inertia_errors(@user)
+      redirect_to settings_profile_path, inertia: {errors: @user.errors}
     end
   end
 

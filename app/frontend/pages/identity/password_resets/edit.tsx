@@ -39,7 +39,7 @@ export default function ResetPassword({ sid, email }: ResetPasswordProps) {
                 className="mt-1 block w-full"
                 readOnly
               />
-              <InputError message={errors.email} className="mt-2" />
+              <InputError messages={errors.email} className="mt-2" />
             </div>
 
             <div className="grid gap-2">
@@ -53,7 +53,7 @@ export default function ResetPassword({ sid, email }: ResetPasswordProps) {
                 autoFocus
                 placeholder="Password"
               />
-              <InputError message={errors.password} />
+              <InputError messages={errors.password} />
             </div>
 
             <div className="grid gap-2">
@@ -67,7 +67,7 @@ export default function ResetPassword({ sid, email }: ResetPasswordProps) {
                 placeholder="Confirm password"
               />
               <InputError
-                message={errors.password_confirmation}
+                messages={errors.password_confirmation}
                 className="mt-2"
               />
             </div>

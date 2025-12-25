@@ -29,9 +29,7 @@ RSpec.describe "Settings::Emails", type: :request do
       it "does not update the email and returns unprocessable entity" do
         patch settings_email_url, params: {email: "new_email@hey.com", password_challenge: "SecretWrong1*3"}
         expect(response).to redirect_to(settings_email_url)
-        expect(session[:inertia_errors]).to eq(
-                                              password_challenge: "Password challenge is invalid",
-                                            )
+        expect(session[:inertia_errors]).to eq(password_challenge: ["is invalid"])
       end
     end
   end
