@@ -1,17 +1,33 @@
-import { router } from "@inertiajs/react"
+import { router, usePage } from "@inertiajs/react"
+import { useEffect, useRef } from "react"
 import { toast } from "sonner"
 
-import type { Flash } from "@/types"
+import type { FlashData } from "@/types"
 
-export const useFlash = () => {
-  router.on("beforeUpdate", (event) => {
-    const flash = event.detail.page.props.flash as Flash
-    if (flash.alert) {
-      toast.error(flash.alert)
+function showFlash(flash: FlashData) {
+  if (flash.alert) {
+    toast.error(flash.alert)
+  }
+  if (flash.notice) {
+    toast(flash.notice)
+  }
+}
+
+export function useFlash() {
+  const { flash } = usePage()
+  const toastShowed = useRef(false)
+
+  useEffect(() => {
+    if (!toastShowed.current) {
+      toastShowed.current = true
+      showFlash(flash)
     }
-    if (flash.notice) {
-      toast(flash.notice)
-    }
-    event.detail.page.props.flash = {}
-  })
+  }, [flash])
+
+  useEffect(() => {
+    return router.on("flash", (event) => {
+      const flash = event.detail.flash
+      showFlash(flash)
+    })
+  }, [])
 }

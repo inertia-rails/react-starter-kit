@@ -17,14 +17,13 @@ export interface NavItem {
   isActive?: boolean
 }
 
-export interface Flash {
+export interface FlashData {
   alert?: string
   notice?: string
 }
 
 export interface SharedData {
   auth: Auth
-  flash: Flash
 }
 
 export interface User {
