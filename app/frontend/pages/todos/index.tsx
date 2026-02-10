@@ -1,10 +1,18 @@
-import { Form, Head, Link } from "@inertiajs/react"
+import { Form, Head, Link, router } from "@inertiajs/react"
 import { Check, RotateCcw, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import InputError from "@/components/input-error"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -33,6 +41,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function TodosIndex({ todos }: TodosProps) {
   const [filter, setFilter] = useState<TodoFilter>("all")
+  const [todoPendingDelete, setTodoPendingDelete] = useState<Todo | null>(null)
+  const [clearCompletedDialogOpen, setClearCompletedDialogOpen] = useState(false)
   const allTodosCount = todos.length
   const openTodosCount = todos.filter((todo) => !todo.completed).length
   const completedTodosCount = todos.filter((todo) => todo.completed).length
@@ -128,20 +138,9 @@ export default function TodosIndex({ todos }: TodosProps) {
               size="sm"
               variant="outline"
               disabled={completedTodosCount === 0}
-              asChild
+              onClick={() => setClearCompletedDialogOpen(true)}
             >
-              <Link
-                href="/todos/completed"
-                method="delete"
-                as="button"
-                onClick={(event) => {
-                  if (!window.confirm("Clear all completed todos?")) {
-                    event.preventDefault()
-                  }
-                }}
-              >
-                Clear completed
-              </Link>
+              Clear completed
             </Button>
           </div>
 
@@ -188,20 +187,13 @@ export default function TodosIndex({ todos }: TodosProps) {
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="destructive" size="icon-sm" asChild>
-                        <Link
-                          href={`/todos/${todo.id}`}
-                          method="delete"
-                          as="button"
-                          aria-label="Delete todo"
-                          onClick={(event) => {
-                            if (!window.confirm("Delete this todo?")) {
-                              event.preventDefault()
-                            }
-                          }}
-                        >
-                          <Trash2 />
-                        </Link>
+                      <Button
+                        variant="destructive"
+                        size="icon-sm"
+                        aria-label="Delete todo"
+                        onClick={() => setTodoPendingDelete(todo)}
+                      >
+                        <Trash2 />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Delete todo</TooltipContent>
@@ -212,6 +204,64 @@ export default function TodosIndex({ todos }: TodosProps) {
           </div>
         </section>
       </div>
+
+      <Dialog
+        open={todoPendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setTodoPendingDelete(null)
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>Delete todo?</DialogTitle>
+          <DialogDescription>
+            This will permanently remove{" "}
+            <span className="font-medium">{todoPendingDelete?.title}</span>.
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!todoPendingDelete) return
+                router.delete(`/todos/${todoPendingDelete.id}`, {
+                  onSuccess: () => setTodoPendingDelete(null),
+                })
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={clearCompletedDialogOpen}
+        onOpenChange={setClearCompletedDialogOpen}
+      >
+        <DialogContent>
+          <DialogTitle>Clear all completed todos?</DialogTitle>
+          <DialogDescription>
+            This will remove all completed tasks from your list.
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                router.delete("/todos/completed", {
+                  onSuccess: () => setClearCompletedDialogOpen(false),
+                })
+              }}
+            >
+              Clear completed
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   )
 }
