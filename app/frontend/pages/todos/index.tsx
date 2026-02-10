@@ -94,6 +94,7 @@ export default function TodosIndex({ todos }: TodosProps) {
 
   const todoRowRefs = useRef(new Map<number, HTMLDivElement>())
   const previousRowTops = useRef(new Map<number, number>())
+  const didDropRef = useRef(false)
   const isDragging = dragState !== null
 
   useLayoutEffect(() => {
@@ -311,6 +312,7 @@ export default function TodosIndex({ todos }: TodosProps) {
               if (!canReorder || !dragState) return
 
               event.preventDefault()
+              didDropRef.current = true
               submitReorder()
             }}
           >
@@ -357,6 +359,7 @@ export default function TodosIndex({ todos }: TodosProps) {
 
                     event.dataTransfer.effectAllowed = "move"
                     event.dataTransfer.setData("text/plain", String(todo.id))
+                    didDropRef.current = false
 
                     setDragState({
                       todoId: todo.id,
@@ -365,7 +368,14 @@ export default function TodosIndex({ todos }: TodosProps) {
                     })
                     setRawDropSlot(sourceIndex)
                   }}
-                  onDragEnd={() => clearDragState()}
+                  onDragEnd={() => {
+                    if (didDropRef.current) {
+                      didDropRef.current = false
+                      return
+                    }
+
+                    clearDragState()
+                  }}
                 >
                   <div className="flex items-center gap-2">
                   <Badge variant={todo.completed ? "default" : "outline"}>
