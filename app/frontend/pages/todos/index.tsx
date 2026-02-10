@@ -94,8 +94,20 @@ export default function TodosIndex({ todos }: TodosProps) {
 
   const todoRowRefs = useRef(new Map<number, HTMLDivElement>())
   const previousRowTops = useRef(new Map<number, number>())
+  const isDragging = dragState !== null
 
   useLayoutEffect(() => {
+    if (isDragging) {
+      previousRowTops.current = new Map(
+        renderedTodos.flatMap((todo) => {
+          const element = todoRowRefs.current.get(todo.id)
+          if (!element) return []
+          return [[todo.id, element.getBoundingClientRect().top] as const]
+        }),
+      )
+      return
+    }
+
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       previousRowTops.current = new Map(
         renderedTodos.flatMap((todo) => {
@@ -132,7 +144,7 @@ export default function TodosIndex({ todos }: TodosProps) {
     })
 
     previousRowTops.current = nextRowTops
-  }, [renderedTodos])
+  }, [renderedTodos, isDragging])
 
   const clearDragState = () => {
     setDragState(null)
@@ -282,11 +294,27 @@ export default function TodosIndex({ todos }: TodosProps) {
               event.dataTransfer.dropEffect = "move"
 
               const container = event.currentTarget
+              const hoveredRow = (event.target as HTMLElement).closest("[data-todo-row]")
+              if (hoveredRow instanceof HTMLElement) {
+                const hoveredTodoId = Number(hoveredRow.dataset.todoId)
+                if (!Number.isNaN(hoveredTodoId)) {
+                  const targetIndex = todoIndexById.get(hoveredTodoId)
+                  if (targetIndex !== undefined) {
+                    const bounds = hoveredRow.getBoundingClientRect()
+                    const dropBeforeTarget =
+                      event.clientY < bounds.top + bounds.height / 2
+                    const rawDropIndex = dropBeforeTarget
+                      ? targetIndex
+                      : targetIndex + 1
+                    updateDropSlot(rawDropIndex)
+                    return
+                  }
+                }
+              }
+
               const firstRow = container.querySelector("[data-todo-row]")
               const lastRow = container.querySelector("[data-todo-row]:last-of-type")
-              if (!(firstRow instanceof HTMLElement) || !(lastRow instanceof HTMLElement)) {
-                return
-              }
+              if (!(firstRow instanceof HTMLElement) || !(lastRow instanceof HTMLElement)) return
 
               const pointerY = event.clientY
               const firstTop = firstRow.getBoundingClientRect().top
@@ -326,6 +354,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                     "border-primary/80 bg-primary/10 opacity-90 shadow-md ring-1 ring-primary/30",
                 )}
                 data-todo-row
+                data-todo-id={todo.id}
                 draggable={canReorder}
                 onDragStart={(event) => {
                   if (!canReorder) return
@@ -350,20 +379,6 @@ export default function TodosIndex({ todos }: TodosProps) {
                   setRawDropSlot(sourceIndex)
                 }}
                 onDragEnd={() => clearDragState()}
-                onDragOver={(event) => {
-                  if (!canReorder || !dragState) return
-
-                  event.preventDefault()
-                  event.dataTransfer.dropEffect = "move"
-
-                  const targetIndex = todoIndexById.get(todo.id)
-                  if (targetIndex === undefined) return
-
-                  const bounds = event.currentTarget.getBoundingClientRect()
-                  const dropBeforeTarget = event.clientY < bounds.top + bounds.height / 2
-                  const rawDropIndex = dropBeforeTarget ? targetIndex : targetIndex + 1
-                  updateDropSlot(rawDropIndex)
-                }}
               >
                 {canReorder &&
                   dragState &&
