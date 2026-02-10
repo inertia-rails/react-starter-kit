@@ -38,7 +38,12 @@ export default function TodosIndex({ todos }: TodosProps) {
             Add tasks, mark them complete, and remove them when done.
           </p>
 
-          <Form action="/todos" method="post" className="mt-4 flex gap-2">
+          <Form
+            action="/todos"
+            method="post"
+            resetOnSuccess={["title"]}
+            className="mt-4 flex gap-2"
+          >
             {({ errors, processing }) => (
               <>
                 <div className="flex-1">
