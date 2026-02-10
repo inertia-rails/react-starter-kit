@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inertia Rails React Builder"
+  short_description: "Build Rails + Inertia React features correctly"
+  default_prompt: "Use $inertia-rails-react-builder to implement a Rails feature with Inertia React pages, forms, validation, and request tests."
