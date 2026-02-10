@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_181000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_10_200000) do
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -23,9 +23,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_181000) do
   create_table "todos", force: :cascade do |t|
     t.boolean "completed", default: false, null: false
     t.datetime "created_at", null: false
+    t.integer "position", default: 1, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["user_id", "position"], name: "index_todos_on_user_id_and_position"
     t.index ["user_id"], name: "index_todos_on_user_id"
   end
 

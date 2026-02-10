@@ -50,6 +50,21 @@ RSpec.describe "Todos", type: :request do
     end
   end
 
+  describe "PATCH /todos/:id/reorder" do
+    before { sign_in_as user }
+
+    it "reorders todos by requested position" do
+      first_todo = create(:todo, user: user, position: 1)
+      second_todo = create(:todo, user: user, position: 2)
+      third_todo = create(:todo, user: user, position: 3)
+
+      patch reorder_todo_url(third_todo), params: {position: 0}
+
+      expect(response).to redirect_to(todos_url)
+      expect(user.todos.ordered.pluck(:id)).to eq([third_todo.id, first_todo.id, second_todo.id])
+    end
+  end
+
   describe "DELETE /todos/:id" do
     before { sign_in_as user }
 

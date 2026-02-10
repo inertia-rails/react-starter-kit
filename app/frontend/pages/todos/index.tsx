@@ -1,5 +1,5 @@
 import { Form, Head, Link, router } from "@inertiajs/react"
-import { Check, RotateCcw, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, Check, RotateCcw, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import InputError from "@/components/input-error"
@@ -23,6 +23,7 @@ interface Todo {
   id: number
   title: string
   completed: boolean
+  position: number
   created_at: string
 }
 
@@ -58,6 +59,11 @@ export default function TodosIndex({ todos }: TodosProps) {
     if (filter === "completed") return "No completed todos yet."
     return "No todos yet."
   }, [filter])
+
+  const todoIndexById = useMemo(
+    () => new Map(todos.map((todo, index) => [todo.id, index])),
+    [todos],
+  )
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -174,6 +180,68 @@ export default function TodosIndex({ todos }: TodosProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        disabled={
+                          filter !== "all" || (todoIndexById.get(todo.id) ?? 0) === 0
+                        }
+                        aria-label="Move todo up"
+                        onClick={() => {
+                          const currentIndex = todoIndexById.get(todo.id)
+                          if (currentIndex === undefined || currentIndex <= 0) return
+
+                          router.patch(`/todos/${todo.id}/reorder`, {
+                            position: currentIndex - 1,
+                          })
+                        }}
+                      >
+                        <ArrowUp />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {filter === "all"
+                        ? "Move up"
+                        : "Switch to All filter to reorder"}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        disabled={
+                          filter !== "all" ||
+                          (todoIndexById.get(todo.id) ?? -1) === todos.length - 1
+                        }
+                        aria-label="Move todo down"
+                        onClick={() => {
+                          const currentIndex = todoIndexById.get(todo.id)
+                          if (
+                            currentIndex === undefined ||
+                            currentIndex >= todos.length - 1
+                          ) {
+                            return
+                          }
+
+                          router.patch(`/todos/${todo.id}/reorder`, {
+                            position: currentIndex + 1,
+                          })
+                        }}
+                      >
+                        <ArrowDown />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {filter === "all"
+                        ? "Move down"
+                        : "Switch to All filter to reorder"}
+                    </TooltipContent>
+                  </Tooltip>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button variant="outline" size="icon-sm" asChild>

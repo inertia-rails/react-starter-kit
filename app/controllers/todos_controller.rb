@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 class TodosController < InertiaController
-  before_action :set_todo, only: %i[ update destroy ]
+  before_action :set_todo, only: %i[ update destroy reorder ]
 
   def index
     render inertia: {
-      todos: -> { Current.user.todos.order(created_at: :desc).as_json(only: %i[id title completed created_at]) }
+      todos: -> { Current.user.todos.ordered.as_json(only: %i[id title completed position created_at]) }
     }
   end
 
@@ -30,6 +30,23 @@ class TodosController < InertiaController
   def destroy
     @todo.destroy!
     redirect_to todos_path, notice: "Todo deleted", status: :see_other
+  end
+
+  def reorder
+    todos = Current.user.todos.ordered.to_a
+    ordered_ids = todos.map(&:id)
+    ordered_ids.delete(@todo.id)
+
+    target_index = params.fetch(:position, 0).to_i.clamp(0, ordered_ids.length)
+    ordered_ids.insert(target_index, @todo.id)
+
+    Todo.transaction do
+      ordered_ids.each_with_index do |id, index|
+        Current.user.todos.where(id: id).update_all(position: index + 1)
+      end
+    end
+
+    redirect_to todos_path, status: :see_other
   end
 
   def destroy_completed

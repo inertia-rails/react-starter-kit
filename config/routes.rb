@@ -16,6 +16,7 @@ Rails.application.routes.draw do
 
   get :dashboard, to: "dashboard#index"
   resources :todos, only: [:index, :create, :update, :destroy] do
+    patch :reorder, on: :member
     delete :completed, on: :collection, action: :destroy_completed
   end
 
