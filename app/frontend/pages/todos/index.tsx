@@ -41,6 +41,12 @@ export default function TodosIndex({ todos }: TodosProps) {
     return todos
   }, [todos, filter])
 
+  const emptyStateMessage = useMemo(() => {
+    if (filter === "open") return "No open todos yet."
+    if (filter === "completed") return "No completed todos yet."
+    return "No todos yet."
+  }, [filter])
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={breadcrumbs[breadcrumbs.length - 1].title} />
@@ -139,7 +145,7 @@ export default function TodosIndex({ todos }: TodosProps) {
 
           <div className="space-y-2">
             {filteredTodos.length === 0 && (
-              <p className="text-muted-foreground text-sm">No todos yet.</p>
+              <p className="text-muted-foreground text-sm">{emptyStateMessage}</p>
             )}
 
             {filteredTodos.map((todo) => (
