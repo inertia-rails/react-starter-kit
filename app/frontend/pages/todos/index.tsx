@@ -53,7 +53,11 @@ export default function TodosIndex({ todos }: TodosProps) {
   const [todoPendingDelete, setTodoPendingDelete] = useState<Todo | null>(null)
   const [clearCompletedDialogOpen, setClearCompletedDialogOpen] = useState(false)
   const [draggedTodoId, setDraggedTodoId] = useState<number | null>(null)
-  const [dragOverTodoId, setDragOverTodoId] = useState<number | null>(null)
+  const [dropIndex, setDropIndex] = useState<number | null>(null)
+  const [dropMarker, setDropMarker] = useState<{
+    todoId: number
+    edge: "before" | "after"
+  } | null>(null)
   const allTodosCount = todos.length
   const openTodosCount = todos.filter((todo) => !todo.completed).length
   const completedTodosCount = todos.filter((todo) => todo.completed).length
@@ -75,13 +79,32 @@ export default function TodosIndex({ todos }: TodosProps) {
     () => new Map(todos.map((todo, index) => [todo.id, index])),
     [todos],
   )
+
+  const renderedTodos = useMemo(() => {
+    if (!canReorder || draggedTodoId === null || dropIndex === null) {
+      return filteredTodos
+    }
+
+    const draggedTodo = todos.find((todo) => todo.id === draggedTodoId)
+    if (!draggedTodo) return filteredTodos
+
+    const remainingTodos = todos.filter((todo) => todo.id !== draggedTodoId)
+    const safeIndex = Math.max(0, Math.min(dropIndex, remainingTodos.length))
+
+    return [
+      ...remainingTodos.slice(0, safeIndex),
+      draggedTodo,
+      ...remainingTodos.slice(safeIndex),
+    ]
+  }, [canReorder, draggedTodoId, dropIndex, filteredTodos, todos])
+
   const todoRowRefs = useRef(new Map<number, HTMLDivElement>())
   const previousRowTops = useRef(new Map<number, number>())
 
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       previousRowTops.current = new Map(
-        filteredTodos.flatMap((todo) => {
+        renderedTodos.flatMap((todo) => {
           const element = todoRowRefs.current.get(todo.id)
           if (!element) return []
           return [[todo.id, element.getBoundingClientRect().top] as const]
@@ -92,7 +115,7 @@ export default function TodosIndex({ todos }: TodosProps) {
 
     const nextRowTops = new Map<number, number>()
 
-    filteredTodos.forEach((todo) => {
+    renderedTodos.forEach((todo) => {
       const element = todoRowRefs.current.get(todo.id)
       if (!element) return
 
@@ -115,7 +138,23 @@ export default function TodosIndex({ todos }: TodosProps) {
     })
 
     previousRowTops.current = nextRowTops
-  }, [filteredTodos])
+  }, [renderedTodos])
+
+  const resolveDropIndex = (sourceIndex: number, rawDropIndex: number) => {
+    const adjustedDropIndex =
+      rawDropIndex > sourceIndex ? rawDropIndex - 1 : rawDropIndex
+    return Math.max(0, Math.min(adjustedDropIndex, todos.length - 1))
+  }
+
+  const submitReorder = (sourceId: number, position: number) => {
+    setDraggedTodoId(null)
+    setDropIndex(null)
+    setDropMarker(null)
+
+    router.patch(`/todos/${sourceId}/reorder`, {
+      position,
+    })
+  }
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -210,12 +249,54 @@ export default function TodosIndex({ todos }: TodosProps) {
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <div
+            className="space-y-2"
+            onDragOver={(event) => {
+              if (!canReorder || draggedTodoId === null || todos.length === 0) return
+
+              event.preventDefault()
+              event.dataTransfer.dropEffect = "move"
+              const sourceIndex = todoIndexById.get(draggedTodoId)
+              if (sourceIndex === undefined) return
+
+              const container = event.currentTarget
+              const firstRow = container.querySelector("[data-todo-row]")
+              const lastRow = container.querySelector("[data-todo-row]:last-of-type")
+
+              if (!(firstRow instanceof HTMLElement) || !(lastRow instanceof HTMLElement)) {
+                return
+              }
+
+              const pointerY = event.clientY
+              const firstTop = firstRow.getBoundingClientRect().top
+              const lastBottom = lastRow.getBoundingClientRect().bottom
+
+              if (pointerY <= firstTop) {
+                setDropIndex(resolveDropIndex(sourceIndex, 0))
+              } else if (pointerY >= lastBottom) {
+                setDropIndex(resolveDropIndex(sourceIndex, todos.length))
+              }
+            }}
+            onDrop={(event) => {
+              if (!canReorder || draggedTodoId === null || dropIndex === null) return
+
+              event.preventDefault()
+              const sourceIndex = todoIndexById.get(draggedTodoId)
+              if (sourceIndex === undefined || sourceIndex === dropIndex) {
+                setDraggedTodoId(null)
+                setDropIndex(null)
+                setDropMarker(null)
+                return
+              }
+
+              submitReorder(draggedTodoId, dropIndex)
+            }}
+          >
             {filteredTodos.length === 0 && (
               <p className="text-muted-foreground text-sm">{emptyStateMessage}</p>
             )}
 
-            {filteredTodos.map((todo) => (
+            {renderedTodos.map((todo) => (
               <div
                 key={todo.id}
                 ref={(element) => {
@@ -226,60 +307,63 @@ export default function TodosIndex({ todos }: TodosProps) {
                   }
                 }}
                 className={cn(
-                  "flex items-center justify-between rounded-lg border p-3 transition-colors",
-                  dragOverTodoId === todo.id && "border-primary/70 bg-primary/5",
+                  "relative flex items-center justify-between rounded-lg border p-3 transition-colors",
+                  todo.id === draggedTodoId &&
+                    "border-primary/80 bg-primary/10 shadow-md ring-1 ring-primary/30",
                 )}
+                data-todo-row
                 onDragOver={(event) => {
-                  if (!canReorder) return
-                  if (draggedTodoId === null || draggedTodoId === todo.id) return
+                  if (!canReorder || draggedTodoId === null) return
 
                   event.preventDefault()
                   event.dataTransfer.dropEffect = "move"
-                  setDragOverTodoId(todo.id)
+
+                  const sourceIndex = todoIndexById.get(draggedTodoId)
+                  const targetIndex = todoIndexById.get(todo.id)
+                  if (sourceIndex === undefined || targetIndex === undefined) return
+
+                  const bounds = event.currentTarget.getBoundingClientRect()
+                  const dropBeforeTarget = event.clientY < bounds.top + bounds.height / 2
+                  setDropMarker({
+                    todoId: todo.id,
+                    edge: dropBeforeTarget ? "before" : "after",
+                  })
+                  const rawDropIndex = dropBeforeTarget ? targetIndex : targetIndex + 1
+
+                  setDropIndex(resolveDropIndex(sourceIndex, rawDropIndex))
                 }}
                 onDragLeave={(event) => {
                   if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
                     return
                   }
-                  setDragOverTodoId((current) =>
-                    current === todo.id ? null : current,
-                  )
                 }}
                 onDrop={(event) => {
-                  if (!canReorder) return
+                  if (!canReorder || draggedTodoId === null || dropIndex === null) return
 
                   event.preventDefault()
-                  const sourceId =
-                    draggedTodoId ??
-                    Number.parseInt(event.dataTransfer.getData("text/plain"), 10)
-                  const sourceIndex = todoIndexById.get(sourceId)
-                  const targetIndex = todoIndexById.get(todo.id)
-
-                  setDragOverTodoId(null)
-                  setDraggedTodoId(null)
-
-                  if (
-                    Number.isNaN(sourceId) ||
-                    sourceIndex === undefined ||
-                    targetIndex === undefined ||
-                    sourceIndex === targetIndex
-                  ) {
+                  const sourceIndex = todoIndexById.get(draggedTodoId)
+                  if (sourceIndex === undefined || sourceIndex === dropIndex) {
+                    setDraggedTodoId(null)
+                    setDropIndex(null)
+                    setDropMarker(null)
                     return
                   }
 
-                  const bounds = event.currentTarget.getBoundingClientRect()
-                  const dropBeforeTarget =
-                    event.clientY < bounds.top + bounds.height / 2
-
-                  const position = dropBeforeTarget
-                    ? targetIndex + (sourceIndex < targetIndex ? -1 : 0)
-                    : targetIndex + (sourceIndex < targetIndex ? 0 : 1)
-
-                  router.patch(`/todos/${sourceId}/reorder`, {
-                    position: Math.max(position, 0),
-                  })
+                  submitReorder(draggedTodoId, dropIndex)
                 }}
               >
+                {canReorder &&
+                  draggedTodoId !== null &&
+                  dropMarker?.todoId === todo.id &&
+                  dropMarker.edge === "before" && (
+                    <div className="absolute -top-1 left-3 right-3 h-0.5 rounded-full bg-primary" />
+                  )}
+                {canReorder &&
+                  draggedTodoId !== null &&
+                  dropMarker?.todoId === todo.id &&
+                  dropMarker.edge === "after" && (
+                    <div className="absolute -bottom-1 left-3 right-3 h-0.5 rounded-full bg-primary" />
+                  )}
                 <div className="flex items-center gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -292,13 +376,15 @@ export default function TodosIndex({ todos }: TodosProps) {
                         disabled={!canReorder}
                         onDragStart={(event) => {
                           setDraggedTodoId(todo.id)
-                          setDragOverTodoId(null)
+                          const sourceIndex = todoIndexById.get(todo.id)
+                          setDropIndex(sourceIndex ?? null)
                           event.dataTransfer.effectAllowed = "move"
                           event.dataTransfer.setData("text/plain", String(todo.id))
                         }}
                         onDragEnd={() => {
                           setDraggedTodoId(null)
-                          setDragOverTodoId(null)
+                          setDropIndex(null)
+                          setDropMarker(null)
                         }}
                       >
                         <GripVertical />
