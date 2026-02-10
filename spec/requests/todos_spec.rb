@@ -14,6 +14,17 @@ RSpec.describe "Todos", type: :request do
         get todos_url
         expect(response).to have_http_status(:success)
       end
+
+      it "returns only the current user's todos in inertia props" do
+        own_todo = create(:todo, user: user, title: "Own todo")
+        create(:todo, user: other_user, title: "Other todo")
+
+        get todos_url
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(own_todo.title)
+        expect(response.body).not_to include("Other todo")
+      end
     end
 
     context "when not authenticated" do
@@ -42,6 +53,17 @@ RSpec.describe "Todos", type: :request do
         expect(response).to redirect_to(todos_url)
         expect(user.todos.ordered.pluck(:title)).to eq(["New top", first_todo.title, second_todo.title])
         expect(user.todos.ordered.pluck(:position)).to eq([1, 2, 3])
+      end
+
+      it "does not shift positions for other users when creating a todo" do
+        create(:todo, user: user, position: 1, title: "My existing")
+        other_todo = create(:todo, user: other_user, position: 1, title: "Other existing")
+
+        post todos_url, params: {title: "My new top"}
+
+        expect(response).to redirect_to(todos_url)
+        expect(user.todos.ordered.pluck(:position)).to eq([1, 2])
+        expect(other_todo.reload.position).to eq(1)
       end
 
       it "does not create a todo with invalid params or shift existing positions" do
