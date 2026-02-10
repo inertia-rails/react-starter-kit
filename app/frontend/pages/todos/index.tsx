@@ -33,6 +33,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function TodosIndex({ todos }: TodosProps) {
   const [filter, setFilter] = useState<TodoFilter>("all")
+  const allTodosCount = todos.length
+  const openTodosCount = todos.filter((todo) => !todo.completed).length
   const completedTodosCount = todos.filter((todo) => todo.completed).length
 
   const filteredTodos = useMemo(() => {
@@ -101,7 +103,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                 variant={filter === "all" ? "default" : "outline"}
                 onClick={() => setFilter("all")}
               >
-                All
+                All ({allTodosCount})
               </Button>
               <Button
                 type="button"
@@ -109,7 +111,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                 variant={filter === "open" ? "default" : "outline"}
                 onClick={() => setFilter("open")}
               >
-                Open
+                Open ({openTodosCount})
               </Button>
               <Button
                 type="button"
@@ -117,7 +119,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                 variant={filter === "completed" ? "default" : "outline"}
                 onClick={() => setFilter("completed")}
               >
-                Complete
+                Complete ({completedTodosCount})
               </Button>
             </div>
 
