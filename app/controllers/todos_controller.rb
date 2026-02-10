@@ -32,6 +32,16 @@ class TodosController < InertiaController
     redirect_to todos_path, notice: "Todo deleted", status: :see_other
   end
 
+  def destroy_completed
+    deleted_count = Current.user.todos.where(completed: true).delete_all
+
+    if deleted_count.positive?
+      redirect_to todos_path, notice: "Completed todos cleared", status: :see_other
+    else
+      redirect_to todos_path, alert: "No completed todos to clear", status: :see_other
+    end
+  end
+
   private
     def set_todo
       @todo = Current.user.todos.find(params[:id])

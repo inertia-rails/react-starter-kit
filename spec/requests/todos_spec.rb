@@ -60,4 +60,18 @@ RSpec.describe "Todos", type: :request do
       expect(response).to redirect_to(todos_url)
     end
   end
+
+  describe "DELETE /todos/completed" do
+    before { sign_in_as user }
+
+    it "deletes all completed todos" do
+      create(:todo, user: user, completed: true)
+      create(:todo, user: user, completed: true)
+      create(:todo, user: user, completed: false)
+
+      expect { delete completed_todos_url }.to change(user.todos, :count).by(-2)
+      expect(response).to redirect_to(todos_url)
+      expect(user.todos.where(completed: true)).to be_empty
+    end
+  end
 end

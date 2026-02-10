@@ -33,6 +33,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function TodosIndex({ todos }: TodosProps) {
   const [filter, setFilter] = useState<TodoFilter>("all")
+  const completedTodosCount = todos.filter((todo) => todo.completed).length
 
   const filteredTodos = useMemo(() => {
     if (filter === "open") return todos.filter((todo) => !todo.completed)
@@ -86,30 +87,53 @@ export default function TodosIndex({ todos }: TodosProps) {
             <Badge variant="secondary">{todos.length}</Badge>
           </div>
 
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={filter === "all" ? "default" : "outline"}
+                onClick={() => setFilter("all")}
+              >
+                All
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={filter === "open" ? "default" : "outline"}
+                onClick={() => setFilter("open")}
+              >
+                Open
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={filter === "completed" ? "default" : "outline"}
+                onClick={() => setFilter("completed")}
+              >
+                Complete
+              </Button>
+            </div>
+
             <Button
               type="button"
               size="sm"
-              variant={filter === "all" ? "default" : "outline"}
-              onClick={() => setFilter("all")}
+              variant="outline"
+              disabled={completedTodosCount === 0}
+              asChild
             >
-              All
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={filter === "open" ? "default" : "outline"}
-              onClick={() => setFilter("open")}
-            >
-              Open
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={filter === "completed" ? "default" : "outline"}
-              onClick={() => setFilter("completed")}
-            >
-              Complete
+              <Link
+                href="/todos/completed"
+                method="delete"
+                as="button"
+                onClick={(event) => {
+                  if (!window.confirm("Clear all completed todos?")) {
+                    event.preventDefault()
+                  }
+                }}
+              >
+                Clear completed
+              </Link>
             </Button>
           </div>
 

@@ -15,7 +15,9 @@ Rails.application.routes.draw do
   end
 
   get :dashboard, to: "dashboard#index"
-  resources :todos, only: [:index, :create, :update, :destroy]
+  resources :todos, only: [:index, :create, :update, :destroy] do
+    delete :completed, on: :collection, action: :destroy_completed
+  end
 
   namespace :settings do
     resource :profile, only: [:show, :update]
