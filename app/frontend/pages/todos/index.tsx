@@ -97,17 +97,6 @@ export default function TodosIndex({ todos }: TodosProps) {
   const isDragging = dragState !== null
 
   useLayoutEffect(() => {
-    if (isDragging) {
-      previousRowTops.current = new Map(
-        renderedTodos.flatMap((todo) => {
-          const element = todoRowRefs.current.get(todo.id)
-          if (!element) return []
-          return [[todo.id, element.getBoundingClientRect().top] as const]
-        }),
-      )
-      return
-    }
-
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       previousRowTops.current = new Map(
         renderedTodos.flatMap((todo) => {
@@ -134,17 +123,21 @@ export default function TodosIndex({ todos }: TodosProps) {
       const delta = previousTop - top
       if (Math.abs(delta) < 1) return
 
+      if (todo.id === dragState?.todoId) {
+        return
+      }
+
       element.animate(
         [
           { transform: `translateY(${delta}px)` },
           { transform: "translateY(0)" },
         ],
-        { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+        { duration: 180, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
       )
     })
 
     previousRowTops.current = nextRowTops
-  }, [renderedTodos, isDragging])
+  }, [renderedTodos, dragState, isDragging])
 
   const clearDragState = () => {
     setDragState(null)
@@ -338,56 +331,55 @@ export default function TodosIndex({ todos }: TodosProps) {
             )}
 
             {renderedTodos.map((todo, index) => (
-              <div
-                key={todo.id}
-                ref={(element) => {
-                  if (element) {
-                    todoRowRefs.current.set(todo.id, element)
-                  } else {
-                    todoRowRefs.current.delete(todo.id)
-                  }
-                }}
-                className={cn(
-                  "relative flex select-none items-center justify-between rounded-lg border p-3 transition-colors",
-                  canReorder && "cursor-grab active:cursor-grabbing",
-                  dragState?.todoId === todo.id &&
-                    "border-primary/80 bg-primary/10 opacity-90 shadow-md ring-1 ring-primary/30",
+              <div key={todo.id} className="relative">
+                {canReorder && dragState?.targetIndex === index && (
+                  <div className="mb-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-all">
+                    Insert here
+                  </div>
                 )}
-                data-todo-row
-                data-todo-id={todo.id}
-                draggable={canReorder}
-                onDragStart={(event) => {
-                  if (!canReorder) return
 
-                  const dragOrigin = event.target as HTMLElement
-                  if (dragOrigin.closest("[data-no-drag]")) {
-                    event.preventDefault()
-                    return
-                  }
-
-                  const sourceIndex = todoIndexById.get(todo.id)
-                  if (sourceIndex === undefined) return
-
-                  event.dataTransfer.effectAllowed = "move"
-                  event.dataTransfer.setData("text/plain", String(todo.id))
-
-                  setDragState({
-                    todoId: todo.id,
-                    sourceIndex,
-                    targetIndex: sourceIndex,
-                  })
-                  setRawDropSlot(sourceIndex)
-                }}
-                onDragEnd={() => clearDragState()}
-              >
-                {canReorder &&
-                  dragState &&
-                  rawDropSlot !== null &&
-                  rawDropSlot !== todos.length &&
-                  dragState.targetIndex === index && (
-                    <div className="absolute -top-1 left-3 right-3 h-0.5 rounded-full bg-primary" />
+                <div
+                  ref={(element) => {
+                    if (element) {
+                      todoRowRefs.current.set(todo.id, element)
+                    } else {
+                      todoRowRefs.current.delete(todo.id)
+                    }
+                  }}
+                  className={cn(
+                    "relative flex select-none items-center justify-between rounded-lg border p-3 transition-[box-shadow,background-color,border-color,opacity] duration-150",
+                    canReorder && "cursor-grab active:cursor-grabbing",
+                    dragState?.todoId === todo.id &&
+                      "border-primary bg-primary/10 opacity-85 shadow-xl ring-2 ring-primary/35",
                   )}
-                <div className="flex items-center gap-2">
+                  data-todo-row
+                  data-todo-id={todo.id}
+                  draggable={canReorder}
+                  onDragStart={(event) => {
+                    if (!canReorder) return
+
+                    const dragOrigin = event.target as HTMLElement
+                    if (dragOrigin.closest("[data-no-drag]")) {
+                      event.preventDefault()
+                      return
+                    }
+
+                    const sourceIndex = todoIndexById.get(todo.id)
+                    if (sourceIndex === undefined) return
+
+                    event.dataTransfer.effectAllowed = "move"
+                    event.dataTransfer.setData("text/plain", String(todo.id))
+
+                    setDragState({
+                      todoId: todo.id,
+                      sourceIndex,
+                      targetIndex: sourceIndex,
+                    })
+                    setRawDropSlot(sourceIndex)
+                  }}
+                  onDragEnd={() => clearDragState()}
+                >
+                  <div className="flex items-center gap-2">
                   <Badge variant={todo.completed ? "default" : "outline"}>
                     {todo.completed ? "Done" : "Open"}
                   </Badge>
@@ -493,12 +485,15 @@ export default function TodosIndex({ todos }: TodosProps) {
                     </TooltipTrigger>
                     <TooltipContent>Delete todo</TooltipContent>
                   </Tooltip>
+                  </div>
                 </div>
               </div>
             ))}
 
             {canReorder && dragState && rawDropSlot === todos.length && (
-              <div className="h-0.5 rounded-full bg-primary" />
+              <div className="rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-all">
+                Insert at end
+              </div>
             )}
           </div>
         </section>
