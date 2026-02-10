@@ -390,12 +390,16 @@ export default function TodosIndex({ todos }: TodosProps) {
 
                 <div className="flex items-center gap-2" data-no-drag>
                   {filter === "all" && (
-                    <>
+                    <div
+                      className="inline-flex overflow-hidden rounded-md border"
+                      data-no-drag
+                    >
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon-sm"
+                            className="rounded-none border-r"
                             disabled={(todoIndexById.get(todo.id) ?? 0) === 0}
                             aria-label="Move todo up"
                             onClick={() => {
@@ -416,8 +420,9 @@ export default function TodosIndex({ todos }: TodosProps) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon-sm"
+                            className="rounded-none"
                             disabled={(todoIndexById.get(todo.id) ?? -1) === todos.length - 1}
                             aria-label="Move todo down"
                             onClick={() => {
@@ -439,7 +444,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                         </TooltipTrigger>
                         <TooltipContent>Move down</TooltipContent>
                       </Tooltip>
-                    </>
+                    </div>
                   )}
 
                   <Tooltip>
