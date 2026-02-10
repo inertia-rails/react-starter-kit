@@ -1,12 +1,29 @@
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
 import { Form, Head, Link, router } from "@inertiajs/react"
 import {
   ArrowDown,
   ArrowUp,
   Check,
+  GripVertical,
   RotateCcw,
   Trash2,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { type CSSProperties, useMemo, useState } from "react"
 
 import InputError from "@/components/input-error"
 import { Badge } from "@/components/ui/badge"
@@ -47,12 +64,152 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ]
 
+interface SortableTodoRowProps {
+  todo: Todo
+  canReorder: boolean
+  filter: TodoFilter
+  index: number
+  totalCount: number
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onDelete: () => void
+}
+
+function SortableTodoRow({
+  todo,
+  canReorder,
+  filter,
+  index,
+  totalCount,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+}: SortableTodoRowProps) {
+  const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
+    useSortable({
+      id: todo.id,
+      disabled: !canReorder,
+    })
+
+  const style: CSSProperties = {
+    transition,
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : undefined,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative flex items-center justify-between rounded-lg border p-3 transition-[box-shadow,background-color,border-color,opacity] duration-150",
+        isDragging && "border-primary bg-primary/10 opacity-85 shadow-xl ring-2 ring-primary/35",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {canReorder && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Drag todo: ${todo.title}`}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Drag to reorder</TooltipContent>
+          </Tooltip>
+        )}
+
+        <Badge variant={todo.completed ? "default" : "outline"}>
+          {todo.completed ? "Done" : "Open"}
+        </Badge>
+        <span className={todo.completed ? "text-muted-foreground line-through" : ""}>
+          {todo.title}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {filter === "all" && (
+          <div className="inline-flex overflow-hidden rounded-md border">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-none border-r"
+                  disabled={index === 0}
+                  aria-label="Move todo up"
+                  onClick={onMoveUp}
+                >
+                  <ArrowUp />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Move up</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-none"
+                  disabled={index === totalCount - 1}
+                  aria-label="Move todo down"
+                  onClick={onMoveDown}
+                >
+                  <ArrowDown />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Move down</TooltipContent>
+            </Tooltip>
+          </div>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon-sm" asChild>
+              <Link
+                href={`/todos/${todo.id}`}
+                method="patch"
+                as="button"
+                data={{completed: !todo.completed}}
+                aria-label={todo.completed ? "Reopen todo" : "Complete todo"}
+              >
+                {todo.completed ? <RotateCcw /> : <Check />}
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{todo.completed ? "Reopen todo" : "Complete todo"}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="destructive"
+              size="icon-sm"
+              aria-label="Delete todo"
+              onClick={onDelete}
+            >
+              <Trash2 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete todo</TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  )
+}
+
 export default function TodosIndex({ todos }: TodosProps) {
   const [filter, setFilter] = useState<TodoFilter>("all")
   const [todoPendingDelete, setTodoPendingDelete] = useState<Todo | null>(null)
   const [clearCompletedDialogOpen, setClearCompletedDialogOpen] = useState(false)
-  const [draggedTodoId, setDraggedTodoId] = useState<number | null>(null)
-  const [dropSlot, setDropSlot] = useState<number | null>(null)
+  const [activeTodoId, setActiveTodoId] = useState<number | null>(null)
   const allTodosCount = todos.length
   const openTodosCount = todos.filter((todo) => !todo.completed).length
   const completedTodosCount = todos.filter((todo) => todo.completed).length
@@ -74,11 +231,26 @@ export default function TodosIndex({ todos }: TodosProps) {
     () => new Map(todos.map((todo, index) => [todo.id, index])),
     [todos],
   )
-  const isDragging = draggedTodoId !== null
+  const isDragging = activeTodoId !== null
+
+  const sortableItemIds = useMemo(
+    () => filteredTodos.map((todo) => todo.id),
+    [filteredTodos],
+  )
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   const clearDragState = () => {
-    setDraggedTodoId(null)
-    setDropSlot(null)
+    setActiveTodoId(null)
   }
 
   const selectFilter = (nextFilter: TodoFilter) => {
@@ -86,36 +258,29 @@ export default function TodosIndex({ todos }: TodosProps) {
     setFilter(nextFilter)
   }
 
-  const clampSlot = (slot: number) => {
-    return Math.max(0, Math.min(slot, todos.length))
+  const handleDragStart = ({active}: DragStartEvent) => {
+    if (!canReorder) return
+    const activeId = Number(active.id)
+    if (Number.isNaN(activeId)) return
+    setActiveTodoId(activeId)
   }
 
-  const slotToTargetIndex = (slot: number, sourceIndex: number) => {
-    const adjustedSlot = slot > sourceIndex ? slot - 1 : slot
-    return Math.max(0, Math.min(adjustedSlot, Math.max(todos.length - 1, 0)))
-  }
+  const handleDragEnd = ({active, over}: DragEndEvent) => {
+    const activeId = Number(active.id)
+    const overId = over ? Number(over.id) : NaN
 
-  const updateDropSlot = (nextSlot: number) => {
-    if (!canReorder || draggedTodoId === null) return
-    const safeSlot = clampSlot(nextSlot)
-    setDropSlot((current) => (current === safeSlot ? current : safeSlot))
-  }
-
-  const submitReorder = () => {
-    if (draggedTodoId === null || dropSlot === null) {
-      clearDragState()
-      return
-    }
-
-    const sourceIndex = todoIndexById.get(draggedTodoId)
     clearDragState()
 
-    if (sourceIndex === undefined) return
+    if (!canReorder || Number.isNaN(activeId) || Number.isNaN(overId)) return
+    if (activeId === overId) return
 
-    const targetIndex = slotToTargetIndex(dropSlot, sourceIndex)
+    const sourceIndex = todoIndexById.get(activeId)
+    const targetIndex = todoIndexById.get(overId)
+
+    if (sourceIndex === undefined || targetIndex === undefined) return
     if (sourceIndex === targetIndex) return
 
-    router.patch(`/todos/${draggedTodoId}/reorder`, {
+    router.patch(`/todos/${activeId}/reorder`, {
       position: targetIndex,
     })
   }
@@ -215,204 +380,54 @@ export default function TodosIndex({ todos }: TodosProps) {
             )}
           </div>
 
-          <div
-            className="space-y-2"
-            onDrop={(event) => {
-              if (!canReorder || draggedTodoId === null) return
-
-              event.preventDefault()
-              submitReorder()
-            }}
-            onDragOver={(event) => {
-              if (!canReorder || draggedTodoId === null) return
-              event.preventDefault()
-              event.dataTransfer.dropEffect = "move"
-            }}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragCancel={clearDragState}
+            onDragEnd={handleDragEnd}
           >
-            {filteredTodos.length === 0 && (
-              <p className="text-muted-foreground text-sm">{emptyStateMessage}</p>
-            )}
+            <SortableContext
+              items={sortableItemIds}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className={cn("space-y-2", isDragging && "select-none")}>
+                {filteredTodos.length === 0 && (
+                  <p className="text-muted-foreground text-sm">{emptyStateMessage}</p>
+                )}
 
-            {filteredTodos.map((todo, index) => {
-              const rowIndex = todoIndexById.get(todo.id) ?? index
+                {filteredTodos.map((todo, index) => {
+                  const todoIndex = todoIndexById.get(todo.id) ?? index
 
-              return (
-                <div key={todo.id} className="relative">
-                  {canReorder && isDragging && dropSlot === rowIndex && (
-                    <div className="mb-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-all">
-                      Insert here
-                    </div>
-                  )}
+                  return (
+                    <SortableTodoRow
+                      key={todo.id}
+                      todo={todo}
+                      canReorder={canReorder}
+                      filter={filter}
+                      index={todoIndex}
+                      totalCount={todos.length}
+                      onMoveUp={() => {
+                        if (todoIndex <= 0) return
 
-                  <div
-                    className={cn(
-                      "relative flex select-none items-center justify-between rounded-lg border p-3 transition-[box-shadow,background-color,border-color,opacity] duration-150",
-                      canReorder && "cursor-grab active:cursor-grabbing",
-                      draggedTodoId === todo.id &&
-                        "border-primary bg-primary/10 opacity-85 shadow-xl ring-2 ring-primary/35",
-                    )}
-                    data-todo-row
-                    data-todo-id={todo.id}
-                    draggable={canReorder}
-                    onDragStart={(event) => {
-                      if (!canReorder) return
+                        router.patch(`/todos/${todo.id}/reorder`, {
+                          position: todoIndex - 1,
+                        })
+                      }}
+                      onMoveDown={() => {
+                        if (todoIndex >= todos.length - 1) return
 
-                      const dragOrigin = event.target as HTMLElement
-                      if (dragOrigin.closest("[data-no-drag]")) {
-                        event.preventDefault()
-                        return
-                      }
-
-                      const sourceIndex = todoIndexById.get(todo.id)
-                      if (sourceIndex === undefined) return
-
-                      event.dataTransfer.effectAllowed = "move"
-                      event.dataTransfer.setData("text/plain", String(todo.id))
-                      setDraggedTodoId(todo.id)
-                      setDropSlot(sourceIndex)
-                    }}
-                    onDragOver={(event) => {
-                      if (!canReorder || draggedTodoId === null) return
-
-                      event.preventDefault()
-                      event.dataTransfer.dropEffect = "move"
-
-                      const bounds = event.currentTarget.getBoundingClientRect()
-                      const midpoint = bounds.top + bounds.height / 2
-                      const nextSlot =
-                        event.clientY < midpoint ? rowIndex : rowIndex + 1
-
-                      updateDropSlot(nextSlot)
-                    }}
-                    onDragEnd={() => {
-                      clearDragState()
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge variant={todo.completed ? "default" : "outline"}>
-                        {todo.completed ? "Done" : "Open"}
-                      </Badge>
-                      <span
-                        className={todo.completed ? "text-muted-foreground line-through" : ""}
-                      >
-                        {todo.title}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2" data-no-drag>
-                      {filter === "all" && (
-                        <div
-                          className="inline-flex overflow-hidden rounded-md border"
-                          data-no-drag
-                        >
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="rounded-none border-r"
-                                disabled={(todoIndexById.get(todo.id) ?? 0) === 0}
-                                aria-label="Move todo up"
-                                onClick={() => {
-                                  const currentIndex = todoIndexById.get(todo.id)
-                                  if (currentIndex === undefined || currentIndex <= 0) return
-
-                                  router.patch(`/todos/${todo.id}/reorder`, {
-                                    position: currentIndex - 1,
-                                  })
-                                }}
-                              >
-                                <ArrowUp />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Move up</TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="rounded-none"
-                                disabled={(todoIndexById.get(todo.id) ?? -1) === todos.length - 1}
-                                aria-label="Move todo down"
-                                onClick={() => {
-                                  const currentIndex = todoIndexById.get(todo.id)
-                                  if (
-                                    currentIndex === undefined ||
-                                    currentIndex >= todos.length - 1
-                                  ) {
-                                    return
-                                  }
-
-                                  router.patch(`/todos/${todo.id}/reorder`, {
-                                    position: currentIndex + 1,
-                                  })
-                                }}
-                              >
-                                <ArrowDown />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Move down</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      )}
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon-sm" asChild>
-                            <Link
-                              href={`/todos/${todo.id}`}
-                              method="patch"
-                              as="button"
-                              data={{completed: !todo.completed}}
-                              aria-label={todo.completed ? "Reopen todo" : "Complete todo"}
-                            >
-                              {todo.completed ? <RotateCcw /> : <Check />}
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {todo.completed ? "Reopen todo" : "Complete todo"}
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="icon-sm"
-                            aria-label="Delete todo"
-                            onClick={() => setTodoPendingDelete(todo)}
-                          >
-                            <Trash2 />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete todo</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-
-            {canReorder && isDragging && (
-              <div
-                className="h-8"
-                onDragOver={(event) => {
-                  updateDropSlot(todos.length)
-                  event.preventDefault()
-                  event.dataTransfer.dropEffect = "move"
-                }}
-              />
-            )}
-
-            {canReorder && isDragging && dropSlot === todos.length && (
-              <div className="rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-all">
-                Insert at end
+                        router.patch(`/todos/${todo.id}/reorder`, {
+                          position: todoIndex + 1,
+                        })
+                      }}
+                      onDelete={() => setTodoPendingDelete(todo)}
+                    />
+                  )
+                })}
               </div>
-            )}
-          </div>
+            </SortableContext>
+          </DndContext>
         </section>
       </div>
 
