@@ -268,15 +268,17 @@ export default function TodosIndex({ todos }: TodosProps) {
               </Button>
             </div>
 
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={completedTodosCount === 0}
-              onClick={() => setClearCompletedDialogOpen(true)}
-            >
-              Clear completed
-            </Button>
+            {filter === "completed" && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={completedTodosCount === 0}
+                onClick={() => setClearCompletedDialogOpen(true)}
+              >
+                Clear completed
+              </Button>
+            )}
           </div>
 
           <div
