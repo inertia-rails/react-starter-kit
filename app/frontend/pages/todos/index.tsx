@@ -23,7 +23,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react"
-import { type CSSProperties, useMemo, useState } from "react"
+import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 import InputError from "@/components/input-error"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +63,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     href: "/todos",
   },
 ]
+const focusTitleInputStorageKey = "todos.focusTitleInputAfterCreate"
 
 interface SortableTodoRowProps {
   todo: Todo
@@ -70,6 +71,7 @@ interface SortableTodoRowProps {
   filter: TodoFilter
   index: number
   totalCount: number
+  setRowElement: (id: number, element: HTMLDivElement | null) => void
   onMoveUp: () => void
   onMoveDown: () => void
   onDelete: () => void
@@ -81,6 +83,7 @@ function SortableTodoRow({
   filter,
   index,
   totalCount,
+  setRowElement,
   onMoveUp,
   onMoveDown,
   onDelete,
@@ -100,7 +103,10 @@ function SortableTodoRow({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(element) => {
+        setNodeRef(element)
+        setRowElement(todo.id, element)
+      }}
       style={style}
       className={cn(
         "relative flex items-center justify-between rounded-lg border p-3 transition-[box-shadow,background-color,border-color,opacity] duration-150",
@@ -232,6 +238,9 @@ export default function TodosIndex({ todos }: TodosProps) {
     [todos],
   )
   const isDragging = activeTodoId !== null
+  const rowElementsById = useRef(new Map<number, HTMLDivElement>())
+  const previousRowTopById = useRef(new Map<number, number>())
+  const titleInputRef = useRef<HTMLInputElement>(null)
 
   const sortableItemIds = useMemo(
     () => filteredTodos.map((todo) => todo.id),
@@ -251,6 +260,36 @@ export default function TodosIndex({ todos }: TodosProps) {
 
   const clearDragState = () => {
     setActiveTodoId(null)
+  }
+
+  const requestTitleInputFocus = () => {
+    let attempts = 0
+    const maxAttempts = 12
+
+    const tryFocus = () => {
+      const input = titleInputRef.current
+      if (!input || input.disabled) {
+        if (attempts < maxAttempts) {
+          attempts += 1
+          requestAnimationFrame(tryFocus)
+        }
+        return
+      }
+
+      input.focus()
+      input.select()
+    }
+
+    requestAnimationFrame(tryFocus)
+  }
+
+  const setRowElement = (id: number, element: HTMLDivElement | null) => {
+    if (element) {
+      rowElementsById.current.set(id, element)
+      return
+    }
+
+    rowElementsById.current.delete(id)
   }
 
   const selectFilter = (nextFilter: TodoFilter) => {
@@ -285,6 +324,57 @@ export default function TodosIndex({ todos }: TodosProps) {
     })
   }
 
+  useLayoutEffect(() => {
+    const nextRowTopById = new Map<number, number>()
+
+    filteredTodos.forEach((todo) => {
+      const rowElement = rowElementsById.current.get(todo.id)
+      if (!rowElement) return
+
+      nextRowTopById.set(todo.id, rowElement.getBoundingClientRect().top)
+    })
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || isDragging) {
+      previousRowTopById.current = nextRowTopById
+      return
+    }
+
+    filteredTodos.forEach((todo) => {
+      const rowElement = rowElementsById.current.get(todo.id)
+      if (!rowElement) return
+
+      const previousTop = previousRowTopById.current.get(todo.id)
+      const nextTop = nextRowTopById.get(todo.id)
+
+      if (previousTop === undefined || nextTop === undefined) return
+
+      const delta = previousTop - nextTop
+      if (Math.abs(delta) < 1) return
+
+      rowElement.animate(
+        [
+          {transform: `translateY(${delta}px)`},
+          {transform: "translateY(0)"},
+        ],
+        {duration: 180, easing: "cubic-bezier(0.22, 1, 0.36, 1)"},
+      )
+    })
+
+    previousRowTopById.current = nextRowTopById
+  }, [filteredTodos, isDragging])
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return
+
+    const shouldFocus =
+      window.sessionStorage.getItem(focusTitleInputStorageKey) === "1"
+
+    if (!shouldFocus) return
+
+    window.sessionStorage.removeItem(focusTitleInputStorageKey)
+    requestTitleInputFocus()
+  }, [allTodosCount])
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={breadcrumbs[breadcrumbs.length - 1].title} />
@@ -300,6 +390,12 @@ export default function TodosIndex({ todos }: TodosProps) {
             action="/todos"
             method="post"
             resetOnSuccess={["title"]}
+            onSuccess={() => {
+              if (typeof window !== "undefined") {
+                window.sessionStorage.setItem(focusTitleInputStorageKey, "1")
+              }
+              requestTitleInputFocus()
+            }}
             className="mt-4 flex gap-2"
           >
             {({ errors, processing }) => (
@@ -309,6 +405,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                     Todo title
                   </Label>
                   <Input
+                    ref={titleInputRef}
                     id="title"
                     name="title"
                     placeholder="What needs to be done?"
@@ -407,6 +504,7 @@ export default function TodosIndex({ todos }: TodosProps) {
                       filter={filter}
                       index={todoIndex}
                       totalCount={todos.length}
+                      setRowElement={setRowElement}
                       onMoveUp={() => {
                         if (todoIndex <= 0) return
 

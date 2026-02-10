@@ -96,6 +96,17 @@ RSpec.describe "Todos", type: :request do
 
         expect(response).to redirect_to(todos_url)
         expect(todo.reload.completed).to eq(true)
+        expect(flash[:notice]).to eq("Todo completed")
+      end
+
+      it "reopens a completed todo and redirects to todos" do
+        todo.update!(completed: true)
+
+        patch todo_url(todo), params: {completed: false}
+
+        expect(response).to redirect_to(todos_url)
+        expect(todo.reload.completed).to eq(false)
+        expect(flash[:notice]).to eq("Todo reopened")
       end
 
       it "returns not found for another user's todo" do

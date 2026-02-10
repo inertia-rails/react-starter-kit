@@ -27,7 +27,8 @@ class TodosController < InertiaController
 
   def update
     if @todo.update(params.permit(:completed))
-      redirect_to todos_path, notice: "Todo updated", status: :see_other
+      notice = @todo.completed? ? "Todo completed" : "Todo reopened"
+      redirect_to todos_path, notice:, status: :see_other
     else
       redirect_to todos_path, inertia: {errors: @todo.errors}, status: :see_other
     end
