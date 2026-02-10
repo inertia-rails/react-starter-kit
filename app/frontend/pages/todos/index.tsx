@@ -1,6 +1,13 @@
 import { Form, Head, Link, router } from "@inertiajs/react"
-import { ArrowDown, ArrowUp, Check, RotateCcw, Trash2 } from "lucide-react"
-import { useMemo, useState } from "react"
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  GripVertical,
+  RotateCcw,
+  Trash2,
+} from "lucide-react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 
 import InputError from "@/components/input-error"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +24,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import AppLayout from "@/layouts/app-layout"
+import { cn } from "@/lib/utils"
 import type { BreadcrumbItem } from "@/types"
 
 interface Todo {
@@ -44,9 +52,12 @@ export default function TodosIndex({ todos }: TodosProps) {
   const [filter, setFilter] = useState<TodoFilter>("all")
   const [todoPendingDelete, setTodoPendingDelete] = useState<Todo | null>(null)
   const [clearCompletedDialogOpen, setClearCompletedDialogOpen] = useState(false)
+  const [draggedTodoId, setDraggedTodoId] = useState<number | null>(null)
+  const [dragOverTodoId, setDragOverTodoId] = useState<number | null>(null)
   const allTodosCount = todos.length
   const openTodosCount = todos.filter((todo) => !todo.completed).length
   const completedTodosCount = todos.filter((todo) => todo.completed).length
+  const canReorder = filter === "all"
 
   const filteredTodos = useMemo(() => {
     if (filter === "open") return todos.filter((todo) => !todo.completed)
@@ -64,6 +75,47 @@ export default function TodosIndex({ todos }: TodosProps) {
     () => new Map(todos.map((todo, index) => [todo.id, index])),
     [todos],
   )
+  const todoRowRefs = useRef(new Map<number, HTMLDivElement>())
+  const previousRowTops = useRef(new Map<number, number>())
+
+  useLayoutEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      previousRowTops.current = new Map(
+        filteredTodos.flatMap((todo) => {
+          const element = todoRowRefs.current.get(todo.id)
+          if (!element) return []
+          return [[todo.id, element.getBoundingClientRect().top] as const]
+        }),
+      )
+      return
+    }
+
+    const nextRowTops = new Map<number, number>()
+
+    filteredTodos.forEach((todo) => {
+      const element = todoRowRefs.current.get(todo.id)
+      if (!element) return
+
+      const top = element.getBoundingClientRect().top
+      nextRowTops.set(todo.id, top)
+
+      const previousTop = previousRowTops.current.get(todo.id)
+      if (previousTop === undefined) return
+
+      const delta = previousTop - top
+      if (Math.abs(delta) < 1) return
+
+      element.animate(
+        [
+          { transform: `translateY(${delta}px)` },
+          { transform: "translateY(0)" },
+        ],
+        { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+      )
+    })
+
+    previousRowTops.current = nextRowTops
+  }, [filteredTodos])
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -166,9 +218,99 @@ export default function TodosIndex({ todos }: TodosProps) {
             {filteredTodos.map((todo) => (
               <div
                 key={todo.id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                ref={(element) => {
+                  if (element) {
+                    todoRowRefs.current.set(todo.id, element)
+                  } else {
+                    todoRowRefs.current.delete(todo.id)
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-between rounded-lg border p-3 transition-colors",
+                  dragOverTodoId === todo.id && "border-primary/70 bg-primary/5",
+                )}
+                onDragOver={(event) => {
+                  if (!canReorder) return
+                  if (draggedTodoId === null || draggedTodoId === todo.id) return
+
+                  event.preventDefault()
+                  event.dataTransfer.dropEffect = "move"
+                  setDragOverTodoId(todo.id)
+                }}
+                onDragLeave={(event) => {
+                  if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    return
+                  }
+                  setDragOverTodoId((current) =>
+                    current === todo.id ? null : current,
+                  )
+                }}
+                onDrop={(event) => {
+                  if (!canReorder) return
+
+                  event.preventDefault()
+                  const sourceId =
+                    draggedTodoId ??
+                    Number.parseInt(event.dataTransfer.getData("text/plain"), 10)
+                  const sourceIndex = todoIndexById.get(sourceId)
+                  const targetIndex = todoIndexById.get(todo.id)
+
+                  setDragOverTodoId(null)
+                  setDraggedTodoId(null)
+
+                  if (
+                    Number.isNaN(sourceId) ||
+                    sourceIndex === undefined ||
+                    targetIndex === undefined ||
+                    sourceIndex === targetIndex
+                  ) {
+                    return
+                  }
+
+                  const bounds = event.currentTarget.getBoundingClientRect()
+                  const dropBeforeTarget =
+                    event.clientY < bounds.top + bounds.height / 2
+
+                  const position = dropBeforeTarget
+                    ? targetIndex + (sourceIndex < targetIndex ? -1 : 0)
+                    : targetIndex + (sourceIndex < targetIndex ? 0 : 1)
+
+                  router.patch(`/todos/${sourceId}/reorder`, {
+                    position: Math.max(position, 0),
+                  })
+                }}
               >
                 <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label="Drag to reorder todo"
+                        draggable={canReorder}
+                        disabled={!canReorder}
+                        onDragStart={(event) => {
+                          setDraggedTodoId(todo.id)
+                          setDragOverTodoId(null)
+                          event.dataTransfer.effectAllowed = "move"
+                          event.dataTransfer.setData("text/plain", String(todo.id))
+                        }}
+                        onDragEnd={() => {
+                          setDraggedTodoId(null)
+                          setDragOverTodoId(null)
+                        }}
+                      >
+                        <GripVertical />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {canReorder
+                        ? "Drag to reorder"
+                        : "Switch to All filter to reorder"}
+                    </TooltipContent>
+                  </Tooltip>
+
                   <Badge variant={todo.completed ? "default" : "outline"}>
                     {todo.completed ? "Done" : "Open"}
                   </Badge>
