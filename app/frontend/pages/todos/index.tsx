@@ -106,7 +106,16 @@ export default function TodosIndex({ todos }: TodosProps) {
                     </Link>
                   </Button>
                   <Button variant="destructive" size="sm" asChild>
-                    <Link href={`/todos/${todo.id}`} method="delete" as="button">
+                    <Link
+                      href={`/todos/${todo.id}`}
+                      method="delete"
+                      as="button"
+                      onClick={(event) => {
+                        if (!window.confirm("Delete this todo?")) {
+                          event.preventDefault()
+                        }
+                      }}
+                    >
                       Delete
                     </Link>
                   </Button>
