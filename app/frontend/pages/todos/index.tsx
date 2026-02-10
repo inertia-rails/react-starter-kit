@@ -1,10 +1,12 @@
 import { Form, Head, Link } from "@inertiajs/react"
+import { Check, RotateCcw, Trash2 } from "lucide-react"
 
 import InputError from "@/components/input-error"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import AppLayout from "@/layouts/app-layout"
 import type { BreadcrumbItem } from "@/types"
 
@@ -95,30 +97,45 @@ export default function TodosIndex({ todos }: TodosProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link
-                      href={`/todos/${todo.id}`}
-                      method="patch"
-                      as="button"
-                      data={{completed: !todo.completed}}
-                    >
-                      {todo.completed ? "Reopen" : "Complete"}
-                    </Link>
-                  </Button>
-                  <Button variant="destructive" size="sm" asChild>
-                    <Link
-                      href={`/todos/${todo.id}`}
-                      method="delete"
-                      as="button"
-                      onClick={(event) => {
-                        if (!window.confirm("Delete this todo?")) {
-                          event.preventDefault()
-                        }
-                      }}
-                    >
-                      Delete
-                    </Link>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="icon-sm" asChild>
+                        <Link
+                          href={`/todos/${todo.id}`}
+                          method="patch"
+                          as="button"
+                          data={{completed: !todo.completed}}
+                          aria-label={todo.completed ? "Reopen todo" : "Complete todo"}
+                        >
+                          {todo.completed ? <RotateCcw /> : <Check />}
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {todo.completed ? "Reopen todo" : "Complete todo"}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="destructive" size="icon-sm" asChild>
+                        <Link
+                          href={`/todos/${todo.id}`}
+                          method="delete"
+                          as="button"
+                          aria-label="Delete todo"
+                          onClick={(event) => {
+                            if (!window.confirm("Delete this todo?")) {
+                              event.preventDefault()
+                            }
+                          }}
+                        >
+                          <Trash2 />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete todo</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             ))}
