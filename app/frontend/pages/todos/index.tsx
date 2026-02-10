@@ -389,67 +389,58 @@ export default function TodosIndex({ todos }: TodosProps) {
                 </div>
 
                 <div className="flex items-center gap-2" data-no-drag>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        disabled={
-                          filter !== "all" || (todoIndexById.get(todo.id) ?? 0) === 0
-                        }
-                        aria-label="Move todo up"
-                        onClick={() => {
-                          const currentIndex = todoIndexById.get(todo.id)
-                          if (currentIndex === undefined || currentIndex <= 0) return
+                  {filter === "all" && (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            disabled={(todoIndexById.get(todo.id) ?? 0) === 0}
+                            aria-label="Move todo up"
+                            onClick={() => {
+                              const currentIndex = todoIndexById.get(todo.id)
+                              if (currentIndex === undefined || currentIndex <= 0) return
 
-                          router.patch(`/todos/${todo.id}/reorder`, {
-                            position: currentIndex - 1,
-                          })
-                        }}
-                      >
-                        <ArrowUp />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {filter === "all"
-                        ? "Move up"
-                        : "Switch to All filter to reorder"}
-                    </TooltipContent>
-                  </Tooltip>
+                              router.patch(`/todos/${todo.id}/reorder`, {
+                                position: currentIndex - 1,
+                              })
+                            }}
+                          >
+                            <ArrowUp />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Move up</TooltipContent>
+                      </Tooltip>
 
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        disabled={
-                          filter !== "all" ||
-                          (todoIndexById.get(todo.id) ?? -1) === todos.length - 1
-                        }
-                        aria-label="Move todo down"
-                        onClick={() => {
-                          const currentIndex = todoIndexById.get(todo.id)
-                          if (
-                            currentIndex === undefined ||
-                            currentIndex >= todos.length - 1
-                          ) {
-                            return
-                          }
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            disabled={(todoIndexById.get(todo.id) ?? -1) === todos.length - 1}
+                            aria-label="Move todo down"
+                            onClick={() => {
+                              const currentIndex = todoIndexById.get(todo.id)
+                              if (
+                                currentIndex === undefined ||
+                                currentIndex >= todos.length - 1
+                              ) {
+                                return
+                              }
 
-                          router.patch(`/todos/${todo.id}/reorder`, {
-                            position: currentIndex + 1,
-                          })
-                        }}
-                      >
-                        <ArrowDown />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {filter === "all"
-                        ? "Move down"
-                        : "Switch to All filter to reorder"}
-                    </TooltipContent>
-                  </Tooltip>
+                              router.patch(`/todos/${todo.id}/reorder`, {
+                                position: currentIndex + 1,
+                              })
+                            }}
+                          >
+                            <ArrowDown />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Move down</TooltipContent>
+                      </Tooltip>
+                    </>
+                  )}
 
                   <Tooltip>
                     <TooltipTrigger asChild>
