@@ -100,9 +100,8 @@ export default function TodosIndex({ todos }: TodosProps) {
         </section>
 
         <section className="rounded-xl border p-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4">
             <h2 className="font-medium">Tasks</h2>
-            <Badge variant="secondary">{todos.length}</Badge>
           </div>
 
           <div className="mb-4 flex items-center justify-between gap-2">
@@ -113,7 +112,10 @@ export default function TodosIndex({ todos }: TodosProps) {
                 variant={filter === "all" ? "default" : "outline"}
                 onClick={() => setFilter("all")}
               >
-                All ({allTodosCount})
+                <span>All</span>
+                <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/15">
+                  {allTodosCount}
+                </span>
               </Button>
               <Button
                 type="button"
@@ -121,7 +123,10 @@ export default function TodosIndex({ todos }: TodosProps) {
                 variant={filter === "open" ? "default" : "outline"}
                 onClick={() => setFilter("open")}
               >
-                Open ({openTodosCount})
+                <span>Open</span>
+                <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/15">
+                  {openTodosCount}
+                </span>
               </Button>
               <Button
                 type="button"
@@ -129,7 +134,10 @@ export default function TodosIndex({ todos }: TodosProps) {
                 variant={filter === "completed" ? "default" : "outline"}
                 onClick={() => setFilter("completed")}
               >
-                Complete ({completedTodosCount})
+                <span>Complete</span>
+                <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/15">
+                  {completedTodosCount}
+                </span>
               </Button>
             </div>
 
