@@ -1,5 +1,6 @@
 import { Form, Head, Link } from "@inertiajs/react"
 import { Check, RotateCcw, Trash2 } from "lucide-react"
+import { useMemo, useState } from "react"
 
 import InputError from "@/components/input-error"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +22,8 @@ interface TodosProps {
   todos: Todo[]
 }
 
+type TodoFilter = "all" | "open" | "completed"
+
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: "Todos",
@@ -29,6 +32,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 ]
 
 export default function TodosIndex({ todos }: TodosProps) {
+  const [filter, setFilter] = useState<TodoFilter>("all")
+
+  const filteredTodos = useMemo(() => {
+    if (filter === "open") return todos.filter((todo) => !todo.completed)
+    if (filter === "completed") return todos.filter((todo) => todo.completed)
+    return todos
+  }, [todos, filter])
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={breadcrumbs[breadcrumbs.length - 1].title} />
@@ -75,12 +86,39 @@ export default function TodosIndex({ todos }: TodosProps) {
             <Badge variant="secondary">{todos.length}</Badge>
           </div>
 
+          <div className="mb-4 flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={filter === "all" ? "default" : "outline"}
+              onClick={() => setFilter("all")}
+            >
+              All
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={filter === "open" ? "default" : "outline"}
+              onClick={() => setFilter("open")}
+            >
+              Open
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={filter === "completed" ? "default" : "outline"}
+              onClick={() => setFilter("completed")}
+            >
+              Complete
+            </Button>
+          </div>
+
           <div className="space-y-2">
-            {todos.length === 0 && (
+            {filteredTodos.length === 0 && (
               <p className="text-muted-foreground text-sm">No todos yet.</p>
             )}
 
-            {todos.map((todo) => (
+            {filteredTodos.map((todo) => (
               <div
                 key={todo.id}
                 className="flex items-center justify-between rounded-lg border p-3"
