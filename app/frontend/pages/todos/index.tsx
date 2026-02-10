@@ -286,38 +286,26 @@ export default function TodosIndex({ todos }: TodosProps) {
               event.preventDefault()
               event.dataTransfer.dropEffect = "move"
 
-              const container = event.currentTarget
-              const hoveredRow = (event.target as HTMLElement).closest("[data-todo-row]")
-              if (hoveredRow instanceof HTMLElement) {
-                const hoveredTodoId = Number(hoveredRow.dataset.todoId)
-                if (!Number.isNaN(hoveredTodoId)) {
-                  const targetIndex = todoIndexById.get(hoveredTodoId)
+              const pointerY = event.clientY
+              let nextRawDropSlot = todos.length
+
+              for (const candidateTodo of renderedTodos) {
+                const element = todoRowRefs.current.get(candidateTodo.id)
+                if (!element) continue
+
+                const bounds = element.getBoundingClientRect()
+                const midpoint = bounds.top + bounds.height / 2
+
+                if (pointerY < midpoint) {
+                  const targetIndex = todoIndexById.get(candidateTodo.id)
                   if (targetIndex !== undefined) {
-                    const bounds = hoveredRow.getBoundingClientRect()
-                    const dropBeforeTarget =
-                      event.clientY < bounds.top + bounds.height / 2
-                    const rawDropIndex = dropBeforeTarget
-                      ? targetIndex
-                      : targetIndex + 1
-                    updateDropSlot(rawDropIndex)
-                    return
+                    nextRawDropSlot = targetIndex
                   }
+                  break
                 }
               }
 
-              const firstRow = container.querySelector("[data-todo-row]")
-              const lastRow = container.querySelector("[data-todo-row]:last-of-type")
-              if (!(firstRow instanceof HTMLElement) || !(lastRow instanceof HTMLElement)) return
-
-              const pointerY = event.clientY
-              const firstTop = firstRow.getBoundingClientRect().top
-              const lastBottom = lastRow.getBoundingClientRect().bottom
-
-              if (pointerY <= firstTop) {
-                updateDropSlot(0)
-              } else if (pointerY >= lastBottom) {
-                updateDropSlot(todos.length)
-              }
+              updateDropSlot(nextRawDropSlot)
             }}
             onDrop={(event) => {
               if (!canReorder || !dragState) return
