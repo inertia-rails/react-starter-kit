@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   end
 
   get :dashboard, to: "dashboard#index"
+  resources :todos, only: [:index, :create, :update, :destroy]
 
   namespace :settings do
     resource :profile, only: [:show, :update]
