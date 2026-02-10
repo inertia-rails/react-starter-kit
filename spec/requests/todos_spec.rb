@@ -31,6 +31,17 @@ RSpec.describe "Todos", type: :request do
       expect(response).to redirect_to(todos_url)
     end
 
+    it "inserts a new todo at the top position" do
+      first_todo = create(:todo, user: user, position: 1, title: "Existing top")
+      second_todo = create(:todo, user: user, position: 2, title: "Existing second")
+
+      post todos_url, params: {title: "New top"}
+
+      expect(response).to redirect_to(todos_url)
+      expect(user.todos.ordered.pluck(:title)).to eq(["New top", first_todo.title, second_todo.title])
+      expect(user.todos.ordered.pluck(:position)).to eq([1, 2, 3])
+    end
+
     it "does not create a todo with invalid params" do
       expect { post todos_url, params: {title: ""} }.not_to change(user.todos, :count)
       expect(response).to redirect_to(todos_url)

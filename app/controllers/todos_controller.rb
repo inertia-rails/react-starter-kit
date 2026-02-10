@@ -10,9 +10,15 @@ class TodosController < InertiaController
   end
 
   def create
-    todo = Current.user.todos.new(params.permit(:title))
+    todo = nil
 
-    if todo.save
+    Todo.transaction do
+      Current.user.todos.update_all("position = position + 1")
+      todo = Current.user.todos.new(params.permit(:title).merge(position: 1))
+      raise ActiveRecord::Rollback unless todo.save
+    end
+
+    if todo&.persisted?
       redirect_to todos_path, notice: "Todo added"
     else
       redirect_to todos_path, inertia: {errors: todo.errors}
