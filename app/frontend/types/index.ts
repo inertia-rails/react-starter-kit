@@ -22,7 +22,7 @@ export interface FlashData {
   notice?: string
 }
 
-export interface SharedData {
+export interface SharedProps {
   auth: Auth
 }
 
