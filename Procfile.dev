@@ -1,3 +1,2 @@
-
-vite: bin/vite dev
+vite: npx vite
 web: bin/rails s -p 3000
