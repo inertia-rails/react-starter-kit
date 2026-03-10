@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
-import RubyPlugin from "vite-plugin-ruby"
+import rails from "rails-vite-plugin"
 
 export default defineConfig({
   ssr: {
@@ -15,6 +15,9 @@ export default defineConfig({
       },
     }),
     tailwindcss(),
-    RubyPlugin(),
+    rails({
+      sourceDir: "app/frontend",
+      ssr: "ssr/ssr.ts",
+    }),
   ],
 })

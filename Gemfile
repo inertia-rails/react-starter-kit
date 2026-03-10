@@ -36,8 +36,8 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
-# Use Vite in Rails and bring joy to your JavaScript experience
-gem "vite_rails", "~> 3.0"
+# Vite integration for Rails [https://github.com/skryukov/rails_vite]
+gem "rails_vite"
 
 # The Rails adapter for Inertia.js [https://inertia-rails.dev]
 gem "inertia_rails", "~> 3.6"
