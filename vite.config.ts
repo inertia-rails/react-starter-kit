@@ -1,3 +1,4 @@
+import inertia from "@inertiajs/vite"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
@@ -16,5 +17,6 @@ export default defineConfig({
     }),
     tailwindcss(),
     RubyPlugin(),
+    inertia(),
   ],
 })
