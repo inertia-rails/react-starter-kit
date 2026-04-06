@@ -101,6 +101,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      # - name: Build Vite assets for tests
+      #   run: bin/vite build --mode test
+      #
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -112,7 +115,7 @@ jobs:
           RAILS_ENV: test
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare spec
+        run: bin/rails db:test:prepare test test:system
 
       - name: Keep screenshots from failed system tests
         uses: actions/upload-artifact@v6

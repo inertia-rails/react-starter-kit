@@ -1,0 +1,11 @@
+one:
+  email: user1@example.com
+  name: Test User
+  password_digest: <%= BCrypt::Password.create('Secret1*3*5*') %>
+  verified: true
+
+two:
+  email: user2@example.com
+  name: Test User
+  password_digest: <%= BCrypt::Password.create('Secret1*3*5*') %>
+  verified: true 
