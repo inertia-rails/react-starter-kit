@@ -3,7 +3,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.1.1"
+gem "rails", "~> 8.1.3"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use sqlite3 as the database for Active Record
@@ -40,7 +40,7 @@ gem "thruster", require: false
 gem "vite_rails", "~> 3.0"
 
 # The Rails adapter for Inertia.js [https://inertia-rails.dev]
-gem "inertia_rails", "~> 3.6"
+gem "inertia_rails", "~> 3.19"
 
 # An authentication system generator for Rails applications
 # we leave gem here to watch for security updates

@@ -1,7 +1,4 @@
-import type { ResolvedComponent } from "@inertiajs/react"
 import { createInertiaApp } from "@inertiajs/react"
-import { StrictMode } from "react"
-import { createRoot } from "react-dom/client"
 
 import { initializeTheme } from "@/hooks/use-appearance"
 import PersistentLayout from "@/layouts/persistent-layout"
@@ -14,50 +11,16 @@ void createInertiaApp({
   //
   title: (title) => (title ? `${title} - ${appName}` : appName),
 
-  resolve: (name) => {
-    const pages = import.meta.glob<{ default: ResolvedComponent }>(
-      "../pages/**/*.tsx",
-      {
-        eager: true,
-      },
-    )
-    const page = pages[`../pages/${name}.tsx`]
-    if (!page) {
-      console.error(`Missing Inertia page component: '${name}.tsx'`)
-    }
+  pages: "../pages",
 
-    // To use a default layout, import the Layout component
-    // and use the following line.
-    // see https://inertia-rails.dev/guide/pages#default-layouts
-    //
-    page.default.layout ??= [PersistentLayout]
+  layout: () => [PersistentLayout],
 
-    return page
-  },
-
-  setup({ el, App, props }) {
-    // Uncomment the following to enable SSR hydration:
-    // if (el.hasChildNodes()) {
-    //   hydrateRoot(el, <App {...props} />)
-    //   return
-    // }
-    createRoot(el).render(
-      <StrictMode>
-        <App {...props} />
-      </StrictMode>,
-    )
-  },
+  strictMode: true,
 
   defaults: {
     form: {
       forceIndicesArrayFormatInFormData: false,
       withAllErrors: true,
-    },
-    future: {
-      useScriptElementForInitialPage: true,
-      useDataInertiaHeadAttribute: true,
-      useDialogForErrorModal: true,
-      preserveEqualProps: true,
     },
   },
 
@@ -80,4 +43,6 @@ void createInertiaApp({
 })
 
 // This will set light / dark mode on load...
-initializeTheme()
+if (typeof localStorage !== "undefined") {
+  initializeTheme()
+}
