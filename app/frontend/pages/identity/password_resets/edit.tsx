@@ -1,9 +1,13 @@
 import { Form, Head } from "@inertiajs/react"
 
-import InputError from "@/components/input-error"
 import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
 import { identityPasswordResetPath } from "@/routes"
@@ -27,56 +31,60 @@ export default function ResetPassword({ sid, email }: ResetPasswordProps) {
         resetOnSuccess={["password", "password_confirmation"]}
       >
         {({ processing, errors }) => (
-          <div className="grid gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
               <Input
                 id="email"
                 type="email"
                 name="email"
                 autoComplete="email"
                 value={email}
-                className="mt-1 block w-full"
                 readOnly
               />
-              <InputError messages={errors.email} className="mt-2" />
-            </div>
+              <FieldError
+                errors={errors.email?.map((message) => ({ message }))}
+              />
+            </Field>
 
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+            <Field>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
               <Input
                 id="password"
                 type="password"
                 name="password"
                 autoComplete="new-password"
-                className="mt-1 block w-full"
                 autoFocus
                 placeholder="Password"
               />
-              <InputError messages={errors.password} />
-            </div>
+              <FieldError
+                errors={errors.password?.map((message) => ({ message }))}
+              />
+            </Field>
 
-            <div className="grid gap-2">
-              <Label htmlFor="password_confirmation">Confirm password</Label>
+            <Field>
+              <FieldLabel htmlFor="password_confirmation">
+                Confirm password
+              </FieldLabel>
               <Input
                 id="password_confirmation"
                 type="password"
                 name="password_confirmation"
                 autoComplete="new-password"
-                className="mt-1 block w-full"
                 placeholder="Confirm password"
               />
-              <InputError
-                messages={errors.password_confirmation}
-                className="mt-2"
+              <FieldError
+                errors={errors.password_confirmation?.map((message) => ({
+                  message,
+                }))}
               />
-            </div>
+            </Field>
 
             <Button type="submit" className="mt-4 w-full" disabled={processing}>
               {processing && <Spinner />}
               Reset password
             </Button>
-          </div>
+          </FieldGroup>
         )}
       </Form>
     </AuthLayout>

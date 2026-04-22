@@ -1,10 +1,9 @@
 import { Form, Head } from "@inertiajs/react"
 
-import InputError from "@/components/input-error"
 import TextLink from "@/components/text-link"
 import { Button } from "@/components/ui/button"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
 import { identityPasswordResetPath, signInPath } from "@/routes"
@@ -21,8 +20,8 @@ export default function ForgotPassword() {
         <Form method="post" action={identityPasswordResetPath()}>
           {({ processing, errors }) => (
             <>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+              <Field>
+                <FieldLabel htmlFor="email">Email address</FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -31,8 +30,10 @@ export default function ForgotPassword() {
                   autoFocus
                   placeholder="email@example.com"
                 />
-                <InputError messages={errors.email} />
-              </div>
+                <FieldError
+                  errors={errors.email?.map((message) => ({ message }))}
+                />
+              </Field>
 
               <div className="my-6 flex items-center justify-start">
                 <Button className="w-full" disabled={processing}>
