@@ -47,7 +47,7 @@ gem "inertia_rails", "~> 3.19"
 gem "authentication-zero"
 
 # Brings Rails named routes to javascript
-gem "js-routes"
+gem "typelizer"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

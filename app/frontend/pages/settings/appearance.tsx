@@ -4,13 +4,13 @@ import AppearanceTabs from "@/components/appearance-tabs"
 import HeadingSmall from "@/components/heading-small"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
-import { settingsAppearancePath } from "@/routes"
+import { settingsAppearance } from "@/routes"
 import type { BreadcrumbItem } from "@/types"
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: "Appearance settings",
-    href: settingsAppearancePath(),
+    href: settingsAppearance().url,
   },
 ]
 

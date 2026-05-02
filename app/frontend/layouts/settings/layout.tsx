@@ -6,39 +6,34 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import {
-  settingsAppearancePath,
-  settingsEmailPath,
-  settingsPasswordPath,
-  settingsProfilePath,
-  settingsSessionsPath,
+  settingsAppearance,
+  settingsEmails,
+  settingsPasswords,
+  settingsProfiles,
+  settingsSessions,
 } from "@/routes"
 import type { NavItem } from "@/types"
 
 const sidebarNavItems: NavItem[] = [
   {
     title: "Profile",
-    href: settingsProfilePath(),
-    icon: null,
+    href: settingsProfiles.show().url,
   },
   {
     title: "Email",
-    href: settingsEmailPath(),
-    icon: null,
+    href: settingsEmails.show().url,
   },
   {
     title: "Password",
-    href: settingsPasswordPath(),
-    icon: null,
+    href: settingsPasswords.show().url,
   },
   {
     title: "Sessions",
-    href: settingsSessionsPath(),
-    icon: null,
+    href: settingsSessions.index().url,
   },
   {
     title: "Appearance",
-    href: settingsAppearancePath(),
-    icon: null,
+    href: settingsAppearance().url,
   },
 ]
 

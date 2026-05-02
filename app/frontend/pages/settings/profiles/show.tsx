@@ -8,13 +8,13 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
-import { settingsProfilePath } from "@/routes"
+import { settingsProfiles } from "@/routes"
 import type { BreadcrumbItem } from "@/types"
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: "Profile settings",
-    href: settingsProfilePath(),
+    href: settingsProfiles.show().url,
   },
 ]
 
@@ -33,8 +33,7 @@ export default function Profile() {
           />
 
           <Form
-            method="patch"
-            action={settingsProfilePath()}
+            action={settingsProfiles.update()}
             options={{
               preserveScroll: true,
             }}

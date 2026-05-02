@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { usersPath } from "@/routes"
+import { users } from "@/routes"
 
 export default function DeleteUser() {
   const passwordInput = useRef<HTMLInputElement>(null)
@@ -47,8 +47,7 @@ export default function DeleteUser() {
               you would like to permanently delete your account.
             </DialogDescription>
             <Form
-              method="delete"
-              action={usersPath()}
+              action={users.destroy()}
               options={{
                 preserveScroll: true,
               }}

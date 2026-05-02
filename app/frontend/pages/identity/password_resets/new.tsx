@@ -6,7 +6,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
-import { identityPasswordResetPath, signInPath } from "@/routes"
+import { identityPasswordResets, sessions } from "@/routes"
 
 export default function ForgotPassword() {
   return (
@@ -17,7 +17,7 @@ export default function ForgotPassword() {
       <Head title="Forgot password" />
 
       <div className="space-y-6">
-        <Form method="post" action={identityPasswordResetPath()}>
+        <Form action={identityPasswordResets.create()}>
           {({ processing, errors }) => (
             <>
               <Field>
@@ -46,7 +46,7 @@ export default function ForgotPassword() {
         </Form>
         <div className="text-muted-foreground space-x-1 text-center text-sm">
           <span>Or, return to</span>
-          <TextLink href={signInPath()}>log in</TextLink>
+          <TextLink href={sessions.new()}>log in</TextLink>
         </div>
       </div>
     </AuthLayout>

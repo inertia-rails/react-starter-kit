@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
-import { sessionPath, settingsSessionsPath } from "@/routes"
+import { sessions as sessionsRoutes, settingsSessions } from "@/routes"
 import type { BreadcrumbItem, Session } from "@/types"
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: "Sessions",
-    href: settingsSessionsPath(),
+    href: settingsSessions.index().url,
   },
 ]
 
@@ -60,8 +60,7 @@ export default function Sessions({ sessions }: SessionsProps) {
                   {session.id !== auth.session.id && (
                     <Button variant="destructive" asChild>
                       <Link
-                        method="delete"
-                        href={sessionPath({ id: session.id })}
+                        href={sessionsRoutes.destroy({ id: session.id })}
                         as="button"
                       >
                         Log out
