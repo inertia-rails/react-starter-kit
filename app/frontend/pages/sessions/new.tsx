@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
-import { newIdentityPasswordResetPath, signInPath, signUpPath } from "@/routes"
+import { identityPasswordResets, sessions, users } from "@/routes"
 
 export default function Login() {
   return (
@@ -21,8 +21,7 @@ export default function Login() {
     >
       <Head title="Log in" />
       <Form
-        method="post"
-        action={signInPath()}
+        action={sessions.create()}
         resetOnSuccess={["password"]}
         className="flex flex-col gap-6"
       >
@@ -50,7 +49,7 @@ export default function Login() {
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <TextLink
-                    href={newIdentityPasswordResetPath()}
+                    href={identityPasswordResets.new()}
                     className="ml-auto text-sm"
                     tabIndex={5}
                   >
@@ -84,7 +83,7 @@ export default function Login() {
 
             <div className="text-muted-foreground text-center text-sm">
               Don&apos;t have an account?{" "}
-              <TextLink href={signUpPath()} tabIndex={5}>
+              <TextLink href={users.new()} tabIndex={5}>
                 Sign up
               </TextLink>
             </div>

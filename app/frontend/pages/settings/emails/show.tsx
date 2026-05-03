@@ -12,13 +12,13 @@ import {
 import { Input } from "@/components/ui/input"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
-import { identityEmailVerificationPath, settingsEmailPath } from "@/routes"
+import { identityEmailVerifications, settingsEmails } from "@/routes"
 import type { BreadcrumbItem } from "@/types"
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: "Email settings",
-    href: settingsEmailPath(),
+    href: settingsEmails.show().url,
   },
 ]
 
@@ -37,8 +37,7 @@ export default function Email() {
           />
 
           <Form
-            method="patch"
-            action={settingsEmailPath()}
+            action={settingsEmails.update()}
             options={{
               preserveScroll: true,
             }}
@@ -72,8 +71,7 @@ export default function Email() {
                       <p className="text-muted-foreground -mt-4 text-sm">
                         Your email address is unverified.{" "}
                         <Link
-                          href={identityEmailVerificationPath()}
-                          method="post"
+                          href={identityEmailVerifications.create()}
                           as="button"
                           className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                         >

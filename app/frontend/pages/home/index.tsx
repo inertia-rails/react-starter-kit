@@ -1,7 +1,7 @@
 import { Head, Link, usePage } from "@inertiajs/react"
 
 import AppLogoIcon from "@/components/app-logo-icon"
-import { dashboardPath, signInPath } from "@/routes"
+import { dashboard, sessions } from "@/routes"
 
 export default function Welcome() {
   const page = usePage()
@@ -22,7 +22,7 @@ export default function Welcome() {
           <nav className="flex items-center justify-end gap-4">
             {auth.user ? (
               <Link
-                href={dashboardPath()}
+                href={dashboard.index()}
                 className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
               >
                 Dashboard
@@ -30,7 +30,7 @@ export default function Welcome() {
             ) : (
               <>
                 <Link
-                  href={signInPath()}
+                  href={sessions.new()}
                   className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                 >
                   Log in

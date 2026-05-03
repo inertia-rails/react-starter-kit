@@ -12,13 +12,13 @@ import {
 import { Input } from "@/components/ui/input"
 import AppLayout from "@/layouts/app-layout"
 import SettingsLayout from "@/layouts/settings/layout"
-import { settingsPasswordPath } from "@/routes"
+import { settingsPasswords } from "@/routes"
 import type { BreadcrumbItem } from "@/types"
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: "Password settings",
-    href: settingsPasswordPath(),
+    href: settingsPasswords.show().url,
   },
 ]
 
@@ -35,8 +35,7 @@ export default function Password() {
           />
 
           <Form
-            method="put"
-            action={settingsPasswordPath()}
+            action={settingsPasswords.update()}
             options={{
               preserveScroll: true,
             }}

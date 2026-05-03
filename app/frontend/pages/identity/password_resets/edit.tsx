@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import AuthLayout from "@/layouts/auth-layout"
-import { identityPasswordResetPath } from "@/routes"
+import { identityPasswordResets } from "@/routes"
 
 interface ResetPasswordProps {
   sid: string
@@ -25,8 +25,7 @@ export default function ResetPassword({ sid, email }: ResetPasswordProps) {
     >
       <Head title="Reset password" />
       <Form
-        method="put"
-        action={identityPasswordResetPath()}
+        action={identityPasswordResets.update()}
         transform={(data) => ({ ...data, sid, email })}
         resetOnSuccess={["password", "password_confirmation"]}
       >
