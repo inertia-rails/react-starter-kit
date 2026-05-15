@@ -429,7 +429,7 @@ DEPENDENCIES
   capybara-lockstep
   debug
   factory_bot_rails
-  inertia_rails (~> 3.19)
+  inertia_rails (~> 3.21)
   jbuilder
   kamal
   letter_opener

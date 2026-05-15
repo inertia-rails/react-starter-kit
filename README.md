@@ -29,43 +29,37 @@ See also:
 
 ## Enabling SSR
 
-This starter kit comes with optional SSR support. To enable it, follow these steps:
+This starter kit ships SSR-ready but turned off. The Puma plugin
+([`plugin :inertia_ssr`](config/puma.rb)) manages the Node.js renderer
+in-process — no separate accessory required.
 
-1. Open `app/frontend/entrypoints/inertia.ts` and uncomment part of the `setup` function:
-   ```ts
-   // Uncomment the following to enable SSR hydration:
-   // if (el.hasChildNodes()) {
-   //   hydrateRoot(el, createElement(App, props))
-   //   return
-   // }
-   ```
-2. Open `config/deploy.yml` and uncomment several lines:
+To turn SSR on, flip two switches:
+
+1. Set `config.ssr_enabled = true` in [`config/initializers/inertia_rails.rb`](config/initializers/inertia_rails.rb).
+2. Build the image with `SSR_ENABLED=true` so the SSR bundle ships
+   alongside the app. Two ways:
+
+   **With Kamal** — add to [`config/deploy.yml`](config/deploy.yml):
+
    ```yml
-   servers:
-     # Uncomment to enable SSR:
-     # vite_ssr:
-     #   hosts:
-     #     - 192.168.0.1
-     #   cmd: bundle exec vite ssr
-     #   options:
-     #     network-alias: vite_ssr
-      
-   # ...
-      
-   env:
-     clear:
-       # Uncomment to enable SSR:
-       # INERTIA_SSR_ENABLED: true
-       # INERTIA_SSR_URL: "http://vite_ssr:13714"
-      
-   # ...
-      
    builder:
-     # Uncomment to enable SSR:
-     # dockerfile: Dockerfile-ssr
+     args:
+       SSR_ENABLED: true
    ```
-   
-That's it! Now you can deploy your app with SSR support.
+
+   **By hand** — pass the build arg directly:
+
+   ```bash
+   docker build --build-arg SSR_ENABLED=true -t react_starter_kit .
+   ```
+
+That's it. Puma boots the SSR process automatically when
+`ssr_enabled` is true, and Inertia falls back to client-side
+rendering if it ever fails (see `config.on_ssr_error`).
+
+In development, flipping `ssr_enabled` is enough — Vite serves SSR
+via its own dev endpoint with HMR. The Docker build arg only matters
+for production images.
 
 ## License
 
