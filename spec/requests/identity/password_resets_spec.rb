@@ -4,7 +4,8 @@ require "rails_helper"
 include ActiveSupport::Testing::TimeHelpers
 
 RSpec.describe "Identity::PasswordResets", type: :request do
-  let(:user) { create(:user) }
+  fixtures :users
+  let(:user) { users(:one) }
 
   describe "GET /new" do
     it "returns http success" do
@@ -42,7 +43,7 @@ RSpec.describe "Identity::PasswordResets", type: :request do
     end
 
     context "with unverified email" do
-      let(:user) { create(:user, verified: false) }
+      before { user.update!(verified: false) }
 
       it "does not send a password reset email" do
         expect {

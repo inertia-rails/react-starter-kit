@@ -3,10 +3,11 @@
 require "rails_helper"
 
 RSpec.describe "Settings::Emails", type: :request do
-  let(:user) { create(:user) }
+  fixtures :users
+  let(:user) { users(:one) }
 
   before do
-    sign_in_as user
+    sign_in user
   end
 
   describe "GET /edit" do

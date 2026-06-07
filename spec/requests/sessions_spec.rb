@@ -3,7 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Sessions", type: :request do
-  let(:user) { create(:user) }
+  fixtures :users
+  let(:user) { users(:one) }
 
   describe "GET /new" do
     it "returns http success" do
@@ -38,7 +39,7 @@ RSpec.describe "Sessions", type: :request do
   end
 
   describe "DELETE /sign_out" do
-    before { sign_in_as user }
+    before { sign_in user }
 
     it "signs out the user and redirects to the sign in url" do
       delete session_url(user.sessions.last)

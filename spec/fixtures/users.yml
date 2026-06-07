@@ -1,0 +1,12 @@
+# Password for both users is: Secret1*3*5*
+one:
+  email: one@example.com
+  name: Test User
+  password_digest: "$2a$04$FPZVbthSpWD4rXvKNiNgzOVDQ3W4ozJjvtr59iUo6hWHCyAiiM9AO"
+  verified: true
+
+two:
+  email: two@example.com
+  name: Another User
+  password_digest: "$2a$04$FPZVbthSpWD4rXvKNiNgzOVDQ3W4ozJjvtr59iUo6hWHCyAiiM9AO"
+  verified: true

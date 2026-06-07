@@ -123,11 +123,6 @@ GEM
     erubi (1.13.1)
     et-orbi (1.4.0)
       tzinfo
-    factory_bot (6.6.0)
-      activesupport (>= 6.1.0)
-    factory_bot_rails (6.5.1)
-      factory_bot (~> 6.5)
-      railties (>= 6.1.0)
     fugit (1.12.2)
       et-orbi (~> 1.4)
       raabro (~> 1.4)
@@ -428,7 +423,6 @@ DEPENDENCIES
   capybara
   capybara-lockstep
   debug
-  factory_bot_rails
   inertia_rails (~> 3.21)
   jbuilder
   kamal
