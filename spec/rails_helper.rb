@@ -21,6 +21,7 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 RSpec.configure do |config|
+  config.fixture_paths = [Rails.root.join("spec/fixtures")]
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
@@ -29,7 +30,5 @@ RSpec.configure do |config|
     driven_by :selenium, using: :headless_chrome, screen_size: [1400, 1400]
   end
 
-  config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
-  config.include AuthenticationHelpers, type: ->(type, _metadata) { [:system, :request, :controller].include?(type) }
 end
