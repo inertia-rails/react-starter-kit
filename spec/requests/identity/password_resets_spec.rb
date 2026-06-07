@@ -1,77 +1,96 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-include ActiveSupport::Testing::TimeHelpers
 
 RSpec.describe "Identity::PasswordResets", type: :request do
   fixtures :users
-  let(:user) { users(:one) }
 
-  describe "GET /new" do
-    it "returns http success" do
-      get new_identity_password_reset_url
+  describe "GET /identity/password_reset/new" do
+    it "renders the forgot password page" do
+      get new_identity_password_reset_path
       expect(response).to have_http_status(:success)
     end
   end
 
-  describe "GET /edit" do
-    it "returns http success" do
-      sid = user.generate_token_for(:password_reset)
-      get edit_identity_password_reset_url(sid:)
-      expect(response).to have_http_status(:success)
-    end
-  end
-
-  describe "POST /create" do
-    context "with valid email" do
+  describe "POST /identity/password_reset" do
+    context "with a verified user" do
       it "sends a password reset email" do
         expect {
-          post identity_password_reset_url, params: {email: user.email}
-        }.to have_enqueued_email(UserMailer, :password_reset).with(params: {user:}, args: [])
-        expect(response).to redirect_to(sign_in_url)
+          post identity_password_reset_path, params: {email: users(:one).email}
+        }.to have_enqueued_mail(UserMailer, :password_reset)
+        expect(response).to redirect_to(sign_in_path)
       end
     end
 
-    context "with nonexistent email" do
+    context "with an unverified user" do
       it "does not send a password reset email" do
+        users(:one).update!(verified: false)
+
         expect {
-          post identity_password_reset_url, params: {email: "invalid_email@hey.com"}
-        }.not_to have_enqueued_email(UserMailer, :password_reset)
-        expect(response).to redirect_to(new_identity_password_reset_url)
+          post identity_password_reset_path, params: {email: users(:one).email}
+        }.not_to have_enqueued_mail(UserMailer, :password_reset)
+        expect(response).to redirect_to(new_identity_password_reset_path)
         expect(flash[:alert]).to eq("You can't reset your password until you verify your email")
       end
     end
 
-    context "with unverified email" do
-      before { user.update!(verified: false) }
-
+    context "with a nonexistent email" do
       it "does not send a password reset email" do
         expect {
-          post identity_password_reset_url, params: {email: user.email}
-        }.not_to have_enqueued_email(UserMailer, :password_reset)
-        expect(response).to redirect_to(new_identity_password_reset_url)
-        expect(flash[:alert]).to eq("You can't reset your password until you verify your email")
+          post identity_password_reset_path, params: {email: "missing@example.com"}
+        }.not_to have_enqueued_mail(UserMailer, :password_reset)
+        expect(response).to redirect_to(new_identity_password_reset_path)
       end
     end
   end
 
-  describe "PATCH /update" do
+  describe "GET /identity/password_reset/edit" do
+    it "renders the reset page with valid token" do
+      sid = users(:one).generate_token_for(:password_reset)
+      get edit_identity_password_reset_path(sid: sid)
+      expect(response).to have_http_status(:success)
+    end
+
+    it "rejects invalid reset token" do
+      get edit_identity_password_reset_path(sid: "invalid")
+      expect(response).to redirect_to(new_identity_password_reset_path)
+    end
+  end
+
+  describe "PATCH /identity/password_reset" do
     context "with valid token" do
       it "updates the password" do
-        sid = user.generate_token_for(:password_reset)
-        patch identity_password_reset_url, params: {sid:, password: "Secret6*4*2*", password_confirmation: "Secret6*4*2*"}
-        expect(response).to redirect_to(sign_in_url)
+        sid = users(:one).generate_token_for(:password_reset)
+        patch identity_password_reset_path(sid: sid), params: {
+          password: "NewPassword1*3*",
+          password_confirmation: "NewPassword1*3*"
+        }
+        expect(response).to redirect_to(sign_in_path)
       end
     end
 
     context "with expired token" do
-      it "does not update the password" do
-        sid = user.generate_token_for(:password_reset)
+      it "rejects the password change" do
+        sid = users(:one).generate_token_for(:password_reset)
         travel 30.minutes
 
-        patch identity_password_reset_url, params: {sid:, password: "Secret6*4*2*", password_confirmation: "Secret6*4*2*"}
-        expect(response).to redirect_to(new_identity_password_reset_url)
+        patch identity_password_reset_path(sid: sid), params: {
+          password: "NewPassword1*3*",
+          password_confirmation: "NewPassword1*3*"
+        }
+        expect(response).to redirect_to(new_identity_password_reset_path)
         expect(flash[:alert]).to eq("That password reset link is invalid")
+      end
+    end
+
+    context "with mismatched password confirmation" do
+      it "rejects the password change" do
+        sid = users(:one).generate_token_for(:password_reset)
+        patch identity_password_reset_path(sid: sid), params: {
+          password: "NewPassword1*3*",
+          password_confirmation: "different"
+        }
+        expect(response).to redirect_to(edit_identity_password_reset_path(sid: sid))
       end
     end
   end

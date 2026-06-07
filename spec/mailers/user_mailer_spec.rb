@@ -5,25 +5,27 @@ require "rails_helper"
 RSpec.describe UserMailer, type: :mailer do
   fixtures :users
 
-  describe "password_reset" do
-    subject(:mail) { UserMailer.with(user:).password_reset }
+  describe "email_verification" do
+    let(:mail) { described_class.with(user: users(:one)).email_verification }
 
-    let(:user) { users(:one) }
+    it "sends to the user's email" do
+      expect(mail.to).to eq(["one@example.com"])
+    end
 
-    it "renders the headers" do
-      expect(mail.subject).to eq("Reset your password")
-      expect(mail.to).to eq([user.email])
+    it "has the correct subject" do
+      expect(mail.subject).to eq("Verify your email")
     end
   end
 
-  describe "email_verification" do
-    subject(:mail) { UserMailer.with(user:).email_verification }
+  describe "password_reset" do
+    let(:mail) { described_class.with(user: users(:one)).password_reset }
 
-    let(:user) { users(:one) }
+    it "sends to the user's email" do
+      expect(mail.to).to eq(["one@example.com"])
+    end
 
-    it "renders the headers" do
-      expect(mail.subject).to eq("Verify your email")
-      expect(mail.to).to eq([user.email])
+    it "has the correct subject" do
+      expect(mail.subject).to eq("Reset your password")
     end
   end
 end

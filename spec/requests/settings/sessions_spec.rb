@@ -4,13 +4,12 @@ require "rails_helper"
 
 RSpec.describe "Settings::Sessions", type: :request do
   fixtures :users
-  let(:user) { users(:one) }
 
-  describe "GET /index" do
-    before { sign_in user }
+  before { sign_in users(:one) }
 
-    it "returns http success" do
-      get settings_sessions_url
+  describe "GET /settings/sessions" do
+    it "renders the sessions index" do
+      get settings_sessions_path
       expect(response).to have_http_status(:success)
     end
   end
