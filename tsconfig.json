@@ -1,4 +1,9 @@
 {
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./app/javascript/*"]
+    }
+  },
   "files": [],
   "references": [
     {
@@ -7,12 +12,5 @@
     {
       "path": "./tsconfig.node.json"
     }
-  ],
-
-  "compilerOptions": {
-    /* Required for shadcn/ui */
-    "paths": {
-      "@/*": ["./app/frontend/*"]
-    }
-  }
+  ]
 }

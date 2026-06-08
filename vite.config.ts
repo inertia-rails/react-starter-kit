@@ -2,8 +2,8 @@ import inertia from "@inertiajs/vite"
 import babel from "@rolldown/plugin-babel"
 import tailwindcss from "@tailwindcss/vite"
 import react, { reactCompilerPreset } from "@vitejs/plugin-react"
+import rails from "rails-vite-plugin"
 import { defineConfig } from "vite"
-import RubyPlugin from "vite-plugin-ruby"
 
 export default defineConfig(({ command }) => ({
   ssr: {
@@ -19,7 +19,7 @@ export default defineConfig(({ command }) => ({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
-    RubyPlugin(),
-    inertia({ ssr: "./entrypoints/inertia.tsx" }),
+    rails(),
+    inertia({ ssr: "app/javascript/entrypoints/inertia.tsx" }),
   ],
 }))

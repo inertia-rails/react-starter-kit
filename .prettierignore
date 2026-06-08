@@ -2,4 +2,4 @@
 build
 coverage
 
-app/frontend/routes
+app/javascript/routes
