@@ -9,7 +9,7 @@ import tseslint from "typescript-eslint"
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   { files: ["app/javascript/**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
-  { ignores: ["app/javascript/routes/**"] },
+  { ignores: ["app/javascript/components/ui/**", "app/javascript/routes/**"] },
   {
     settings: {
       react: {
