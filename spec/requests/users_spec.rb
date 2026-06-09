@@ -48,7 +48,7 @@ RSpec.describe "Users", type: :request do
     it "destroys current user with valid password" do
       sign_in users(:one)
       expect {
-        delete users_path, params: {password_challenge: "Secret1*3*5*"}
+        delete users_path, params: { password_challenge: "Secret1*3*5*" }
       }.to change(User, :count).by(-1)
       expect(response).to redirect_to(root_path)
     end
@@ -56,7 +56,7 @@ RSpec.describe "Users", type: :request do
     it "rejects account deletion with wrong password" do
       sign_in users(:one)
       expect {
-        delete users_path, params: {password_challenge: "wrongpassword"}
+        delete users_path, params: { password_challenge: "wrongpassword" }
       }.not_to change(User, :count)
       expect(response).to redirect_to(settings_profile_path)
     end

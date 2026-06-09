@@ -9,7 +9,7 @@ RSpec.describe UserMailer, type: :mailer do
     let(:mail) { described_class.with(user: users(:one)).email_verification }
 
     it "sends to the user's email" do
-      expect(mail.to).to eq(["one@example.com"])
+      expect(mail.to).to eq([ "one@example.com" ])
     end
 
     it "has the correct subject" do
@@ -21,7 +21,7 @@ RSpec.describe UserMailer, type: :mailer do
     let(:mail) { described_class.with(user: users(:one)).password_reset }
 
     it "sends to the user's email" do
-      expect(mail.to).to eq(["one@example.com"])
+      expect(mail.to).to eq([ "one@example.com" ])
     end
 
     it "has the correct subject" do

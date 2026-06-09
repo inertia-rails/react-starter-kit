@@ -34,7 +34,7 @@ RSpec.describe "Settings::Emails", type: :request do
           password_challenge: "wrongpassword"
         }
         expect(response).to redirect_to(settings_email_path)
-        expect(session[:inertia_errors]).to eq(password_challenge: ["is invalid"])
+        expect(session[:inertia_errors]).to eq(password_challenge: [ "is invalid" ])
         expect(users(:one).reload.email).to eq("one@example.com")
       end
     end

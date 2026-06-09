@@ -16,7 +16,7 @@ RSpec.describe "Identity::PasswordResets", type: :request do
     context "with a verified user" do
       it "sends a password reset email" do
         expect {
-          post identity_password_reset_path, params: {email: users(:one).email}
+          post identity_password_reset_path, params: { email: users(:one).email }
         }.to have_enqueued_mail(UserMailer, :password_reset)
         expect(response).to redirect_to(sign_in_path)
       end
@@ -27,7 +27,7 @@ RSpec.describe "Identity::PasswordResets", type: :request do
         users(:one).update!(verified: false)
 
         expect {
-          post identity_password_reset_path, params: {email: users(:one).email}
+          post identity_password_reset_path, params: { email: users(:one).email }
         }.not_to have_enqueued_mail(UserMailer, :password_reset)
         expect(response).to redirect_to(new_identity_password_reset_path)
         expect(flash[:alert]).to eq("You can't reset your password until you verify your email")
@@ -37,7 +37,7 @@ RSpec.describe "Identity::PasswordResets", type: :request do
     context "with a nonexistent email" do
       it "does not send a password reset email" do
         expect {
-          post identity_password_reset_path, params: {email: "missing@example.com"}
+          post identity_password_reset_path, params: { email: "missing@example.com" }
         }.not_to have_enqueued_mail(UserMailer, :password_reset)
         expect(response).to redirect_to(new_identity_password_reset_path)
       end
