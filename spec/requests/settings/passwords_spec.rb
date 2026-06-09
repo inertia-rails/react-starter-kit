@@ -35,7 +35,7 @@ RSpec.describe "Settings::Passwords", type: :request do
           password_challenge: "wrongpassword"
         }
         expect(response).to redirect_to(settings_password_path)
-        expect(session[:inertia_errors]).to eq(password_challenge: ["is invalid"])
+        expect(session[:inertia_errors]).to eq(password_challenge: [ "is invalid" ])
       end
     end
   end
