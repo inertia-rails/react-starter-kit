@@ -9,9 +9,6 @@ require "rspec/rails"
 require "capybara/rspec"
 require "selenium-webdriver"
 
-# Precompile Vite assets once before running the test suite
-ViteRuby.commands.build
-
 Rails.root.glob("spec/support/**/*.rb").sort_by(&:to_s).each { |f| require f }
 
 begin
