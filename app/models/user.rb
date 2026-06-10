@@ -11,7 +11,6 @@ class User < ApplicationRecord
     password_salt.last(10)
   end
 
-
   has_many :sessions, dependent: :destroy
 
   validates :name, presence: true

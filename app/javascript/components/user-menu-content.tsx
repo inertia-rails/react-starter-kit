@@ -15,7 +15,7 @@ import type { User } from "@/types"
 interface UserMenuContentProps {
   auth: {
     session: {
-      id: string
+      id: number
     }
     user: User
   }
