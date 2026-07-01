@@ -13,6 +13,3 @@ if Rails.env.local?
 
   task default: %i[rubocop:autocorrect]
 end
-
-# Update js-routes file before javascript build
-task "assets:precompile" => "js:routes"
