@@ -6,24 +6,19 @@ import PersistentLayout from "@/layouts/persistent-layout"
 const appName = import.meta.env.VITE_APP_NAME ?? "React Starter Kit"
 
 void createInertiaApp({
-  // Set default page title
-  // see https://inertia-rails.dev/guide/title-and-meta
-  //
   title: (title) => (title ? `${title} - ${appName}` : appName),
-
-  pages: "../pages",
-
-  layout: () => [PersistentLayout],
-
   strictMode: true,
-
+  pages: "../pages",
+  layout: () => PersistentLayout,
   defaults: {
     form: {
       forceIndicesArrayFormatInFormData: false,
       withAllErrors: true,
     },
+    visitOptions: () => ({
+      queryStringArrayFormat: "brackets",
+    }),
   },
-
   progress: {
     color: "#4B5563",
   },

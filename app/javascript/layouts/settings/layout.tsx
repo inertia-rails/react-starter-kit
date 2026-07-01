@@ -18,22 +18,27 @@ const sidebarNavItems: NavItem[] = [
   {
     title: "Profile",
     href: settingsProfiles.show().url,
+    icon: null,
   },
   {
     title: "Email",
     href: settingsEmails.show().url,
+    icon: null,
   },
   {
     title: "Password",
     href: settingsPasswords.show().url,
+    icon: null,
   },
   {
     title: "Sessions",
     href: settingsSessions.index().url,
+    icon: null,
   },
   {
     title: "Appearance",
     href: settingsAppearance().url,
+    icon: null,
   },
 ]
 

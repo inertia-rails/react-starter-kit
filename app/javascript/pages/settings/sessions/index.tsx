@@ -60,7 +60,7 @@ export default function Sessions({ sessions }: SessionsProps) {
                   {session.id !== auth.session.id && (
                     <Button variant="destructive" asChild>
                       <Link
-                        href={sessionsRoutes.destroy({ id: session.id })}
+                        href={sessionsRoutes.destroy(session.id)}
                         as="button"
                       >
                         Log out

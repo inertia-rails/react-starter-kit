@@ -38,7 +38,7 @@ export interface User {
 }
 
 export interface Session {
-  id: string
+  id: number
   user_agent: string
   ip_address: string
   created_at: string
