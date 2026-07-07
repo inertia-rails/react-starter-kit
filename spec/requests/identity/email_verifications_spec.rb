@@ -43,11 +43,13 @@ RSpec.describe "Identity::EmailVerifications", type: :request do
 
   describe "POST /identity/email_verification" do
     it "resends the verification email" do
-      sign_in users(:one)
+      user = users(:one)
+      user.update!(verified: false)
+      sign_in user
 
       expect {
         post identity_email_verification_path
-      }.to have_enqueued_mail(UserMailer, :email_verification)
+      }.to have_enqueued_email(UserMailer, :email_verification).with(params: { user: user }, args: [])
       expect(response).to be_redirect
     end
   end
