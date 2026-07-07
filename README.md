@@ -2,6 +2,19 @@
 
 A modern full-stack starter application with Rails backend and React frontend using Inertia.js based on the [Laravel Starter Kit](https://github.com/laravel/react-starter-kit).
 
+## About this repo
+
+This starter kit is generated output of [inertia-rails/generator](https://github.com/inertia-rails/generator):
+each generator release regenerates the app and opens an automated sync PR here, so most files in this repo
+are overwritten on every sync. **To contribute changes to the app itself, open a PR against the generator** —
+only this README and the deploy workflow are kit-owned.
+
+Prefer different options (framework, JavaScript instead of TypeScript, feature set)? Generate your own app:
+
+```sh
+rails new myapp -m https://raw.githubusercontent.com/inertia-rails/generator/dist/template.rb
+```
+
 ## Features
 
 - [Inertia Rails](https://inertia-rails.dev) & [Vite Rails](https://vite-ruby.netlify.app) setup
