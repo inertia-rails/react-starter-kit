@@ -81,7 +81,7 @@ builder:
   arch: amd64
   cache:
     type: registry
-    image: your-user/react_starter_kit-build-cache
+    image: your-user/react-starter-kit-build-cache
     options: mode=max
 
   # # Build image via remote server (useful for faster amd64 builds on arm64 computers)

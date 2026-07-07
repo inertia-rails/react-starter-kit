@@ -9,5 +9,5 @@ InertiaRails.configure do |config|
   config.parent_controller = "::InertiaController"
 
   # Flip to true (and rebuild with --build-arg SSR_ENABLED=true) to enable SSR.
-  config.ssr_enabled = false
+  config.ssr_enabled = true
 end

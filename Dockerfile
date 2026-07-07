@@ -2,13 +2,13 @@
 # check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t react_starter_kit .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name react_starter_kit react_starter_kit
+# docker build -t react-starter-kit .
+# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name react-starter-kit react-starter-kit
 
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
 # Set to "true" to build and ship the SSR runtime; flip and rebuild to toggle.
-ARG SSR_ENABLED=false
+ARG SSR_ENABLED=true
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=4.0.1
@@ -39,7 +39,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install Node.js (needed for builds; kept in runtime for SSR)
-ARG NODE_VERSION=22.22.2
+ARG NODE_VERSION=22.23.1
 ENV PATH=/usr/local/node/bin:$PATH
 RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
     /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
