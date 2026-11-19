@@ -19,7 +19,7 @@
     "sonner": "^2.0.8"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.13",
+    "@babel/core": "^8.1.2",
     "@eslint/js": "^9.39.5",
     "@inertiajs/core": "^3.11.0",
     "@inertiajs/vite": "^3.11.0",
