@@ -3,6 +3,9 @@
 class Settings::PasswordsController < InertiaController
   before_action :set_user
 
+  rate_limit to: 10, within: 3.minutes, only: :update,
+    with: -> { redirect_to settings_password_path, alert: "Too many attempts. Try again later" }
+
   def show
   end
 

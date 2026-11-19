@@ -5,6 +5,9 @@ class Identity::PasswordResetsController < InertiaController
 
   before_action :set_user, only: %i[edit update]
 
+  rate_limit to: 10, within: 3.minutes, only: %i[create update],
+    with: -> { redirect_to new_identity_password_reset_path, alert: "Too many attempts. Try again later" }
+
   def new
   end
 
