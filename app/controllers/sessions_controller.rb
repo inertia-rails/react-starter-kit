@@ -5,6 +5,9 @@ class SessionsController < InertiaController
   before_action :require_no_authentication, only: %i[new create]
   before_action :set_session, only: :destroy
 
+  rate_limit to: 10, within: 3.minutes, only: :create,
+    with: -> { redirect_to sign_in_path, alert: "Too many attempts. Try again later" }
+
   def new
   end
 

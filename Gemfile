@@ -37,14 +37,7 @@ gem "thruster", require: false
 gem "rails_vite" # Vite integration [https://github.com/skryukov/rails_vite]
 
 # The Rails adapter for Inertia.js [https://inertia-rails.dev]
-gem "inertia_rails", "~> 3.21"
-
-# An authentication system generator for Rails applications
-# we leave gem here to watch for security updates
-gem "authentication-zero"
-
-# Brings Rails named routes to javascript
-gem "typelizer"
+gem "inertia_rails", "~> 3.23"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -78,3 +71,5 @@ group :test do
   gem "capybara-lockstep"
   gem "selenium-webdriver"
 end
+gem "typelizer"
+gem "authentication-zero"

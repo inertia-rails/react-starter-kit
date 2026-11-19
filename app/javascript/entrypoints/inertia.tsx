@@ -9,6 +9,7 @@ void createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),
   strictMode: true,
   pages: "../pages",
+  serverHead: true,
   layout: () => PersistentLayout,
   defaults: {
     form: {
